@@ -1,4 +1,4 @@
-package router
+package todoApi
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ var todoList = []todoType.Todo{
 	{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 }
 
-func test() {
+func Test() {
 	fmt.Printf("%+v\n", todoList)
 }
 
@@ -25,11 +25,9 @@ func getTodoList(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, todoList)
 }
 
-// func main() {
-// 	todo := todoType.Todo{}
-// 	fmt.Printf("%+v\n", todo)
-// 	fmt.Println("hello world.")
+func Router() {
+	router := gin.Default()
+	router.GET("/todo", getTodoList)
 
-// 	router := gin.Default()
-// 	router.GET("/todo", getTodoList)
-// }
+	router.Run("localhost:8080")
+}
