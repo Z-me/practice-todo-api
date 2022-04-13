@@ -17,6 +17,7 @@ func Router() {
 	router.GET("/todo", handler.GetTodoList)
 	router.GET("/todo/:id", handler.GetTodoListItemById)
 	router.POST("/todo", handler.PostTodoItem)
+	router.DELETE("/todo/:id", handler.DeleteTodoListItemByID)
 
 	router.Run("localhost:8080")
 }

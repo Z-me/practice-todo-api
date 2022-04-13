@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -41,4 +42,17 @@ func PostTodoItem(c *gin.Context) {
 
 	todoList = append(todoList, newTodo)
 	c.IndentedJSON(http.StatusCreated, newTodo)
+}
+
+func DeleteTodoListItemByID(c *gin.Context) {
+	id := c.Param("id")
+	for i, item := range todoList {
+		if item.ID == id {
+			c.IndentedJSON(http.StatusOK, item)
+			todoList = append(todoList[:i], todoList[i + 1:]...)
+			fmt.Println("Deleted Todolist", todoList)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
 }
