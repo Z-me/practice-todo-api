@@ -25,7 +25,7 @@ func GetTodoListItemById(c *gin.Context) {
 	id := c.Param("id")
 	for _, item := range todoList {
 		if item.ID == id {
-			c.indentedJSON(http.StatusOK, item)
+			c.IndentedJSON(http.StatusOK, item)
 			return
 		}
 	}
