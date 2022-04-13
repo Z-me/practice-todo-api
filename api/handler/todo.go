@@ -44,7 +44,7 @@ func PostTodoItem(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, newTodo)
 }
 
-func DeleteTodoListItemByID(c *gin.Context) {
+func DeleteTodoListItemById(c *gin.Context) {
 	id := c.Param("id")
 	for i, item := range todoList {
 		if item.ID == id {
@@ -55,4 +55,26 @@ func DeleteTodoListItemByID(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+}
+
+func PostTodoListItemById(c *gin.Context) {
+	id := c.Param("id")
+	var newTodo todoType.Todo
+
+	if err := c.BindJSON(&newTodo); err != nil {
+		return
+	}
+
+	for i, item := range todoList {
+		if item.ID == id {
+			c.IndentedJSON(http.StatusOK, item)
+			tmp := append(todoList[:i], newTodo)
+			todoList = append(tmp, todoList[i + 1:]...)
+			fmt.Println("Updated Todolist", newTodo)
+			c.IndentedJSON(http.StatusCreated, newTodo)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+	// todoList = append(todoList, newTodo)
 }
