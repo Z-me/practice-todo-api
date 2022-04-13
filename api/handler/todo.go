@@ -20,3 +20,25 @@ var todoList = []todoType.Todo{
 func GetTodoList(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, todoList)
 }
+
+func GetTodoListItemById(c *gin.Context) {
+	id := c.Param("id")
+	for _, item := range todoList {
+		if item.ID == id {
+			c.indentedJSON(http.StatusOK, item)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+}
+
+func PostTodoItem(c *gin.Context) {
+	var newTodo todoType.Todo
+
+	if err := c.BindJSON(&newTodo); err != nil {
+		return
+	}
+
+	todoList = append(todoList, newTodo)
+	c.IndentedJSON(http.StatusCreated, newTodo)
+}
