@@ -67,7 +67,6 @@ func PostTodoListItemById(c *gin.Context) {
 
 	for i, item := range todoList {
 		if item.ID == id {
-			c.IndentedJSON(http.StatusOK, item)
 			tmp := append(todoList[:i], newTodo)
 			todoList = append(tmp, todoList[i + 1:]...)
 			fmt.Println("Updated Todolist", newTodo)
@@ -77,4 +76,22 @@ func PostTodoListItemById(c *gin.Context) {
 	}
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
 	// todoList = append(todoList, newTodo)
+}
+
+func PostTodoListItemUpdateStateById(c *gin.Context) {
+	id := c.Param("id")
+	status := c.Param("status")
+
+	for i, item := range todoList {
+		if item.ID == id {
+			target := item
+			target.Status = status
+			tmp := append(todoList[:i], target)
+			todoList = append(tmp, todoList[i + 1:]...)
+			fmt.Println("Updated Todolist", target)
+			c.IndentedJSON(http.StatusCreated, target)
+			return
+		}
+	}
+
 }
