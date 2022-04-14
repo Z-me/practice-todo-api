@@ -6,5 +6,6 @@ import (
 
 func main() {
 	todoApi.Test()
-	todoApi.Router()
+	todoApi.Router().Run("localhost:8080")
+	// todoApi.Router().Run()
 }

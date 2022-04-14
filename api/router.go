@@ -12,7 +12,7 @@ func Test() {
 	fmt.Println("Open Todo API")
 }
 
-func Router() {
+func Router() *gin.Engine {
 	router := gin.Default()
 	router.GET("/todo", handler.GetTodoList)
 	router.GET("/todo/:id", handler.GetTodoListItemById)
@@ -21,5 +21,5 @@ func Router() {
 	router.POST("/todo/:id/status/:status", handler.PostTodoListItemUpdateStateById)
 	router.DELETE("/todo/:id", handler.DeleteTodoListItemById)
 
-	router.Run("localhost:8080")
+	return router
 }
