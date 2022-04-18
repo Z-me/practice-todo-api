@@ -6,14 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	todoType "github.com/Z-me/practice-todo-api/api/model"
+	"github.com/Z-me/practice-todo-api/api/model"
 )
 
-var todoList = []todoType.Todo{}
+var todoList = []model.Todo{}
 
 // NOTE: Default Todo
 func SetDefault() {
-	todoList = []todoType.Todo{
+	todoList = []model.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
@@ -26,7 +26,7 @@ func GetTodoList(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, todoList)
 }
 
-func GetTodoListItemById(c *gin.Context) {
+func GetTodoItemById(c *gin.Context) {
 	id := c.Param("id")
 	for _, item := range todoList {
 		if item.ID == id {
@@ -37,8 +37,8 @@ func GetTodoListItemById(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
 }
 
-func PostTodoItem(c *gin.Context) {
-	var newTodo todoType.Todo
+func AddNewTodo(c *gin.Context) {
+	var newTodo model.Todo
 
 	if err := c.BindJSON(&newTodo); err != nil {
 		return
@@ -48,22 +48,9 @@ func PostTodoItem(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, newTodo)
 }
 
-func DeleteTodoListItemById(c *gin.Context) {
+func UpdateTodoItem(c *gin.Context) {
 	id := c.Param("id")
-	for i, item := range todoList {
-		if item.ID == id {
-			c.IndentedJSON(http.StatusOK, item)
-			todoList = append(todoList[:i], todoList[i + 1:]...)
-			fmt.Println("Deleted Todolist", todoList)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
-}
-
-func PostTodoListItemById(c *gin.Context) {
-	id := c.Param("id")
-	var newTodo todoType.Todo
+	var newTodo model.Todo
 
 	if err := c.BindJSON(&newTodo); err != nil {
 		return
@@ -82,7 +69,7 @@ func PostTodoListItemById(c *gin.Context) {
 	// todoList = append(todoList, newTodo)
 }
 
-func PostTodoListItemUpdateStateById(c *gin.Context) {
+func UpdateTodoState(c *gin.Context) {
 	id := c.Param("id")
 	status := c.Param("status")
 
@@ -97,5 +84,17 @@ func PostTodoListItemUpdateStateById(c *gin.Context) {
 			return
 		}
 	}
+}
 
+func DeleteTodoListItem(c *gin.Context) {
+	id := c.Param("id")
+	for i, item := range todoList {
+		if item.ID == id {
+			c.IndentedJSON(http.StatusOK, item)
+			todoList = append(todoList[:i], todoList[i + 1:]...)
+			fmt.Println("Deleted Todolist", todoList)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
 }

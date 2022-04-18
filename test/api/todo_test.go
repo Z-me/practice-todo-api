@@ -10,18 +10,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	todoApi "github.com/Z-me/practice-todo-api/api"
-	todoType "github.com/Z-me/practice-todo-api/api/model"
+	"github.com/Z-me/practice-todo-api/api"
+	"github.com/Z-me/practice-todo-api/api/model"
 )
 
 func TestGetTodoList(t *testing.T) {
 	// Note: Start test Server
-	ts := httptest.NewServer(todoApi.Router())
+	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := []todoType.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
+	exp := []model.Todo{
+		{ID: "1",	Title: "最初のTODO", Status: "Done", Details: "最初に登録されたTodo", Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
 		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
@@ -35,7 +35,7 @@ func TestGetTodoList(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var responseData []todoType.Todo
+	var responseData []model.Todo
 	json.NewDecoder(res.Body).Decode(&responseData)
 
 	if res.StatusCode != http.StatusOK {
@@ -49,11 +49,11 @@ func TestGetTodoList(t *testing.T) {
 
 func TestGetTodoItemById(t *testing.T) {
 	// Note: Start test Server
-	ts := httptest.NewServer(todoApi.Router())
+	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := todoType.Todo{
+	exp := model.Todo{
 		ID: "1",
 		Title: "最初のTODO",
 		Status: "Done",
@@ -68,7 +68,7 @@ func TestGetTodoItemById(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var responseData todoType.Todo
+	var responseData model.Todo
 	json.NewDecoder(res.Body).Decode(&responseData)
 
 	if res.StatusCode != http.StatusOK {
@@ -82,11 +82,11 @@ func TestGetTodoItemById(t *testing.T) {
 
 func TestAddItem(t *testing.T) {
 	// Note: Start test Server
-	ts := httptest.NewServer(todoApi.Router())
+	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := []todoType.Todo{
+	exp := []model.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
@@ -94,7 +94,7 @@ func TestAddItem(t *testing.T) {
 		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 		{ID: "6",	Title: "6番目TODO",	Status: "InProgress",	Details: "6番目に登録されたTodo",	Priority: "P0"},
 	}
-	payload := todoType.Todo{ID: "6",Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
+	payload := model.Todo{ID: "6",Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -118,7 +118,7 @@ func TestAddItem(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var responseData []todoType.Todo
+	var responseData []model.Todo
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 
 	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
@@ -132,18 +132,18 @@ func TestAddItem(t *testing.T) {
 
 func TestUpdateItem(t *testing.T) {
 	// Note: Start test Server
-	ts := httptest.NewServer(todoApi.Router())
+	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := []todoType.Todo{
+	exp := []model.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
 		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
 		{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"},
 	}
-	payload := todoType.Todo{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
+	payload := model.Todo{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -171,7 +171,7 @@ func TestUpdateItem(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var responseData []todoType.Todo
+	var responseData []model.Todo
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 
 
@@ -186,10 +186,10 @@ func TestUpdateItem(t *testing.T) {
 
 func TestUpdateStateById(t *testing.T) {
 	// Note: Start test Server
-	ts := httptest.NewServer(todoApi.Router())
+	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
-	exp := []todoType.Todo{
+	exp := []model.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
@@ -210,7 +210,7 @@ func TestUpdateStateById(t *testing.T) {
 	}
 	defer getRes.Body.Close()
 
-	var responseData []todoType.Todo
+	var responseData []model.Todo
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 
 	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
@@ -224,11 +224,11 @@ func TestUpdateStateById(t *testing.T) {
 
 func TestDeleteItem(t *testing.T) {
 	// Note: Start test Server
-	ts := httptest.NewServer(todoApi.Router())
+	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := []todoType.Todo{
+	exp := []model.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
@@ -258,7 +258,7 @@ func TestDeleteItem(t *testing.T) {
 		t.Fatalf("Expected status code 200, got %v and %v", deleteRes.StatusCode, getRes.StatusCode)
 	}
 
-	var responseData []todoType.Todo
+	var responseData []model.Todo
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 	if !reflect.DeepEqual(responseData, exp) {
 		t.Fatalf("responseData = %v, want %v", responseData, exp)
