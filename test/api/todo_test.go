@@ -3,8 +3,8 @@ package main
 import (
 	"reflect"
 
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 
 	"net/http"
 	"net/http/httptest"
@@ -14,22 +14,12 @@ import (
 	todoType "github.com/Z-me/practice-todo-api/api/types/todo"
 )
 
-func TestTodoApiServer(t *testing.T) {
-	// テスト用のサーバーを立てる
+func TestGetTodoList(t *testing.T) {
+	// Note: Start test Server
 	ts := httptest.NewServer(todoApi.Router())
 	defer ts.Close()
 
-	testGetList(ts.URL, t)
-	testGetItemById(ts.URL, t)
-	testPostItem(ts.URL, t)
-	testPostItemById(ts.URL, t)
-	testUpdateItemStateById(ts.URL, t)
-
-	testDeleteItem(ts.URL, t)
-
-}
-
-func testGetList(url string, t *testing.T) {
+	// Note: expected Values
 	exp := []todoType.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
@@ -37,26 +27,32 @@ func testGetList(url string, t *testing.T) {
 		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
 		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
-	res, err := http.Get(url + "/todo")
-	defer res.Body.Close()
 
+	// Note: Call API
+	res, err := http.Get(ts.URL + "/todo")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
+	defer res.Body.Close()
 
 	var responseData []todoType.Todo
-	err = json.NewDecoder(res.Body).Decode(&responseData)
+	json.NewDecoder(res.Body).Decode(&responseData)
 
 	if res.StatusCode != http.StatusOK {
-		t.Fatalf("[Get Todo List] Expected status code 200, got %v", res.StatusCode)
+		t.Fatalf("Expected status code 200, got %v", res.StatusCode)
 	}
 
 	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("[Get Todo List] responseData = %v, want %v", responseData, exp)
+		t.Fatalf("responseData = %v, want %v", responseData, exp)
 	}
 }
 
-func testGetItemById(url string, t *testing.T) {
+func TestGetTodoItemById(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(todoApi.Router())
+	defer ts.Close()
+
+	// Note: expected Values
 	exp := todoType.Todo{
 		ID: "1",
 		Title: "最初のTODO",
@@ -64,15 +60,16 @@ func testGetItemById(url string, t *testing.T) {
 		Details: "最初に登録されたTodo",
 		Priority: "P0",
 	}
-	res, err := http.Get(url + "/todo/1")
-	defer res.Body.Close()
 
+	// Note: Call API
+	res, err := http.Get(ts.URL + "/todo/1")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
+	defer res.Body.Close()
 
 	var responseData todoType.Todo
-	err = json.NewDecoder(res.Body).Decode(&responseData)
+	json.NewDecoder(res.Body).Decode(&responseData)
 
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("[Get Todo Item By ID] Expected status code 200, got %v", res.StatusCode)
@@ -83,7 +80,12 @@ func testGetItemById(url string, t *testing.T) {
 	}
 }
 
-func testPostItem(url string, t *testing.T) {
+func TestAddItem(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(todoApi.Router())
+	defer ts.Close()
+
+	// Note: expected Values
 	exp := []todoType.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
@@ -93,18 +95,20 @@ func testPostItem(url string, t *testing.T) {
 		{ID: "6",	Title: "6番目TODO",	Status: "InProgress",	Details: "6番目に登録されたTodo",	Priority: "P0"},
 	}
 	payload := todoType.Todo{ID: "6",Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
-
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	postRes, err := http.Post(url + "/todo", "application/json", bytes.NewBuffer(payloadJson))
+
+	// Note: Call POST API
+	postRes, err := http.Post(ts.URL + "/todo", "application/json", bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	defer postRes.Body.Close()
 
-	getRes, err := http.Get(url + "/todo")
+	// Note: Call GET API
+	getRes, err := http.Get(ts.URL + "/todo")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -115,7 +119,6 @@ func testPostItem(url string, t *testing.T) {
 	}
 
 	var responseData []todoType.Todo
-	// res, err := json.NewDecoder(getRes.Body).Decode(&responseData)
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 
 	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
@@ -127,7 +130,12 @@ func testPostItem(url string, t *testing.T) {
 	}
 }
 
-func testPostItemById(url string, t *testing.T) {
+func TestUpdateItem(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(todoApi.Router())
+	defer ts.Close()
+
+	// Note: expected Values
 	exp := []todoType.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
@@ -137,18 +145,24 @@ func testPostItemById(url string, t *testing.T) {
 		{ID: "6",Title: "更新された6番目TODO",Status: "Done",Details: "6番目に登録され、その後更新されたTodo",Priority: "P0"},
 	}
 	payload := todoType.Todo{ID: "6",Title: "更新された6番目TODO",Status: "Done",Details: "6番目に登録され、その後更新されたTodo",Priority: "P0"}
-
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	postRes, err := http.Post(url + "/todo/6", "application/json", bytes.NewBuffer(payloadJson))
+
+	// Note: Call POST API
+	postRes, err := http.Post(ts.URL + "/todo/6", "application/json", bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	defer postRes.Body.Close()
 
-	getRes, err := http.Get(url + "/todo")
+	if postRes.StatusCode != http.StatusCreated {
+		t.Fatalf("[Update Todo Item] Expected status code 201, got %v", postRes.StatusCode)
+	}
+
+	// Note: Call GET API
+	getRes, err := http.Get(ts.URL + "/todo")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -159,11 +173,11 @@ func testPostItemById(url string, t *testing.T) {
 	}
 
 	var responseData []todoType.Todo
-	// res, err := json.NewDecoder(getRes.Body).Decode(&responseData)
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 
-	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
-		t.Fatalf("[Update Todo Item] Expected status code 200, got %v and %v", postRes.StatusCode, getRes.StatusCode)
+
+	if getRes.StatusCode != http.StatusOK {
+		t.Fatalf("[Update Todo Item] Expected status code 200, got %v", getRes.StatusCode)
 	}
 
 	if !reflect.DeepEqual(responseData, exp) {
@@ -171,7 +185,11 @@ func testPostItemById(url string, t *testing.T) {
 	}
 }
 
-func testUpdateItemStateById(url string, t *testing.T) {
+func TestUpdateStateById(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(todoApi.Router())
+	defer ts.Close()
+
 	exp := []todoType.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
@@ -181,24 +199,20 @@ func testUpdateItemStateById(url string, t *testing.T) {
 		{ID: "6",Title: "更新された6番目TODO",Status: "Backlog",Details: "6番目に登録され、その後更新されたTodo",Priority: "P0"},
 	}
 
-	postRes, err := http.Post(url + "/todo/6/status/Backlog", "application/json", nil)
+	postRes, err := http.Post(ts.URL + "/todo/6/status/Backlog", "application/json", nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	defer postRes.Body.Close()
 
-	getRes, err := http.Get(url + "/todo")
+	// Note: Call POST API
+	getRes, err := http.Get(ts.URL + "/todo")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	defer getRes.Body.Close()
 
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
 	var responseData []todoType.Todo
-	// res, err := json.NewDecoder(getRes.Body).Decode(&responseData)
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 
 	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
@@ -210,24 +224,33 @@ func testUpdateItemStateById(url string, t *testing.T) {
 	}
 }
 
-func testDeleteItem(url string, t *testing.T) {
+func TestDeleteItem(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(todoApi.Router())
+	defer ts.Close()
+
+	// Note: expected Values
 	exp := []todoType.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
 		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
-	// deleteRes, err := http.Delete(url + "/todo/3")
+
+	// Note: Call DELETE API
 	client := &http.Client{}
-	req, err := http.NewRequest("DELETE", url + "/todo/6", nil)
+	req, err := http.NewRequest("DELETE", ts.URL + "/todo/5", nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	deleteRes, _ := client.Do(req)
+	deleteRes, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	defer deleteRes.Body.Close()
 
-	getRes, err := http.Get(url + "/todo")
+	// Note: Call GET API
+	getRes, err := http.Get(ts.URL + "/todo")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
