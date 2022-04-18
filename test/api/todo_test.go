@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	todoApi "github.com/Z-me/practice-todo-api/api"
-	todoType "github.com/Z-me/practice-todo-api/api/types/todo"
+	todoType "github.com/Z-me/practice-todo-api/api/model"
 )
 
 func TestGetTodoList(t *testing.T) {
@@ -141,17 +141,16 @@ func TestUpdateItem(t *testing.T) {
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
 		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
-		{ID: "6",Title: "更新された6番目TODO",Status: "Done",Details: "6番目に登録され、その後更新されたTodo",Priority: "P0"},
+		{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"},
 	}
-	payload := todoType.Todo{ID: "6",Title: "更新された6番目TODO",Status: "Done",Details: "6番目に登録され、その後更新されたTodo",Priority: "P0"}
+	payload := todoType.Todo{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
 	// Note: Call POST API
-	postRes, err := http.Post(ts.URL + "/todo/6", "application/json", bytes.NewBuffer(payloadJson))
+	postRes, err := http.Post(ts.URL + "/todo/5", "application/json", bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -195,11 +194,10 @@ func TestUpdateStateById(t *testing.T) {
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
 		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
 		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
-		{ID: "6",Title: "更新された6番目TODO",Status: "Backlog",Details: "6番目に登録され、その後更新されたTodo",Priority: "P0"},
+		{ID: "5",	Title: "5番目TODO",	Status: "Backlog",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
 
-	postRes, err := http.Post(ts.URL + "/todo/6/status/Backlog", "application/json", nil)
+	postRes, err := http.Post(ts.URL + "/todo/5/status/Backlog", "application/json", nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -257,12 +255,12 @@ func TestDeleteItem(t *testing.T) {
 	defer getRes.Body.Close()
 
 	if deleteRes.StatusCode != http.StatusOK || getRes.StatusCode != http.StatusOK {
-		t.Fatalf("[Post Todo Item] Expected status code 200, got %v and %v", deleteRes.StatusCode, getRes.StatusCode)
+		t.Fatalf("Expected status code 200, got %v and %v", deleteRes.StatusCode, getRes.StatusCode)
 	}
 
 	var responseData []todoType.Todo
 	json.NewDecoder(getRes.Body).Decode(&responseData)
 	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("[Post Todo Item] responseData = %v, want %v", responseData, exp)
+		t.Fatalf("responseData = %v, want %v", responseData, exp)
 	}
 }

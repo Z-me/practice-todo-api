@@ -14,6 +14,8 @@ func Test() {
 
 func Router() *gin.Engine {
 	router := gin.Default()
+
+	handler.SetDefault()
 	router.GET("/todo", handler.GetTodoList)
 	router.GET("/todo/:id", handler.GetTodoListItemById)
 	router.POST("/todo", handler.PostTodoItem)
