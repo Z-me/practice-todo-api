@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -10,16 +11,20 @@ import (
 )
 
 var todoList = []model.Todo{}
+// Note: Structのリテラルとしてmodel.Idだと使えないらしい
+// var nextId model.Id
+var nextId int
 
 // NOTE: Default Todo
 func SetDefault() {
 	todoList = []model.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
+	nextId = 6
 }
 
 func GetTodoList(c *gin.Context) {
@@ -29,7 +34,7 @@ func GetTodoList(c *gin.Context) {
 func GetTodoItemById(c *gin.Context) {
 	id := c.Param("id")
 	for _, item := range todoList {
-		if item.ID == id {
+		if strconv.Itoa(item.ID) == id {
 			c.IndentedJSON(http.StatusOK, item)
 			return
 		}
@@ -38,11 +43,20 @@ func GetTodoItemById(c *gin.Context) {
 }
 
 func AddNewTodo(c *gin.Context) {
-	var newTodo model.Todo
+	var payload model.CreatePayload
 
-	if err := c.BindJSON(&newTodo); err != nil {
+	if err := c.BindJSON(&payload); err != nil {
 		return
 	}
+
+	newTodo := model.Todo {
+		ID: nextId,
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
+	}
+	nextId +=  1
 
 	todoList = append(todoList, newTodo)
 	c.IndentedJSON(http.StatusCreated, newTodo)
@@ -57,7 +71,7 @@ func UpdateTodoItem(c *gin.Context) {
 	}
 
 	for i, item := range todoList {
-		if item.ID == id {
+		if strconv.Itoa(item.ID) == id {
 			tmp := append(todoList[:i], newTodo)
 			todoList = append(tmp, todoList[i + 1:]...)
 			fmt.Println("Updated Todolist", newTodo)
@@ -74,7 +88,7 @@ func UpdateTodoState(c *gin.Context) {
 	status := c.Param("status")
 
 	for i, item := range todoList {
-		if item.ID == id {
+		if strconv.Itoa(item.ID) == id {
 			target := item
 			target.Status = status
 			tmp := append(todoList[:i], target)
@@ -89,7 +103,7 @@ func UpdateTodoState(c *gin.Context) {
 func DeleteTodoListItem(c *gin.Context) {
 	id := c.Param("id")
 	for i, item := range todoList {
-		if item.ID == id {
+		if strconv.Itoa(item.ID) == id {
 			c.IndentedJSON(http.StatusOK, item)
 			todoList = append(todoList[:i], todoList[i + 1:]...)
 			fmt.Println("Deleted Todolist", todoList)
