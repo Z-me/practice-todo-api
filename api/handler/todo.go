@@ -16,7 +16,7 @@ var todoList = []model.Todo{}
 var nextId int
 
 // NOTE: Default Todo
-func SetDefault() {
+func LoadInitialData() {
 	todoList = []model.Todo{
 		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
@@ -43,7 +43,7 @@ func GetTodoItemById(c *gin.Context) {
 }
 
 func AddNewTodo(c *gin.Context) {
-	var payload model.CreatePayload
+	var payload model.Payload
 
 	if err := c.BindJSON(&payload); err != nil {
 		return
@@ -64,10 +64,20 @@ func AddNewTodo(c *gin.Context) {
 
 func UpdateTodoItem(c *gin.Context) {
 	id := c.Param("id")
-	var newTodo model.Todo
+	var payload model.Payload
 
-	if err := c.BindJSON(&newTodo); err != nil {
+	if err := c.BindJSON(&payload); err != nil {
 		return
+	}
+
+	idNum, _ := strconv.Atoi(id)
+
+	newTodo := model.Todo {
+		ID: idNum,
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
 	}
 
 	for i, item := range todoList {
@@ -80,17 +90,20 @@ func UpdateTodoItem(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
-	// todoList = append(todoList, newTodo)
 }
 
 func UpdateTodoState(c *gin.Context) {
 	id := c.Param("id")
-	status := c.Param("status")
+	var payload model.StatusPayload
+
+	if err := c.BindJSON(&payload); err != nil {
+		return
+	}
 
 	for i, item := range todoList {
 		if strconv.Itoa(item.ID) == id {
 			target := item
-			target.Status = status
+			target.Status = payload.Status
 			tmp := append(todoList[:i], target)
 			todoList = append(tmp, todoList[i + 1:]...)
 			fmt.Println("Updated Todolist", target)

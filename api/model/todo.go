@@ -12,9 +12,13 @@ type Todo struct {
   Priority  string  `json:"priority"`
 }
 
-type CreatePayload struct {
+type Payload struct {
   Title     string  `json:"title"`
   Status    string  `json:"status"`
   Details   string  `json:"details"`
   Priority  string  `json:"priority"`
+}
+
+type StatusPayload struct {
+  Status    string `json:"status"`
 }

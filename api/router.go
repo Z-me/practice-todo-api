@@ -15,12 +15,12 @@ func Test() {
 func Router() *gin.Engine {
 	router := gin.Default()
 
-	handler.SetDefault()
+	handler.LoadInitialData()
 	router.GET("/todo", handler.GetTodoList)
 	router.GET("/todo/:id", handler.GetTodoItemById)
 	router.POST("/todo", handler.AddNewTodo)
-	router.POST("/todo/:id", handler.UpdateTodoItem)
-	router.POST("/todo/:id/status/:status", handler.UpdateTodoState)
+	router.PUT("/todo/:id", handler.UpdateTodoItem)
+	router.PATCH("/todo/:id/status", handler.UpdateTodoState)
 	router.DELETE("/todo/:id", handler.DeleteTodoListItem)
 
 	return router
