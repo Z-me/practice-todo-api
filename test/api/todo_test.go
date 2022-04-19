@@ -35,15 +35,15 @@ func TestGetTodoList(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var responseData []model.Todo
-	json.NewDecoder(res.Body).Decode(&responseData)
+	var resData []model.Todo
+	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status code 200, got %v", res.StatusCode)
 	}
 
-	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("responseData = %v, want %v", responseData, exp)
+	if !reflect.DeepEqual(exp, resData) {
+		t.Fatalf("resData = %v, want %v", resData, exp)
 	}
 }
 
@@ -68,15 +68,15 @@ func TestGetTodoItemById(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var responseData model.Todo
-	json.NewDecoder(res.Body).Decode(&responseData)
+	var resData model.Todo
+	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("[Get Todo Item By ID] Expected status code 200, got %v", res.StatusCode)
 	}
 
-	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("[Get Todo Item By ID] responseData = %v, want %v", responseData, exp)
+	if !reflect.DeepEqual(exp, resData) {
+		t.Fatalf("[Get Todo Item By ID] resData = %v, want %v", resData, exp)
 	}
 }
 
@@ -118,15 +118,15 @@ func TestAddItem(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var responseData []model.Todo
-	json.NewDecoder(getRes.Body).Decode(&responseData)
+	var resData []model.Todo
+	json.NewDecoder(getRes.Body).Decode(&resData)
 
 	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
 		t.Fatalf("[Post New Todo Item] Expected status code 200, got %v and %v", postRes.StatusCode, getRes.StatusCode)
 	}
 
-	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("[Post New Todo Item] responseData = %v, want %v", responseData, exp)
+	if !reflect.DeepEqual(exp, resData) {
+		t.Fatalf("[Post New Todo Item] resData = %v, want %v", resData, exp)
 	}
 }
 
@@ -135,52 +135,44 @@ func TestUpdateItem(t *testing.T) {
 	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
-	// Note: expected Values
-	exp := []model.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"},
-	}
-	payload := model.Todo{ID: "5",Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
+	targetId := "5"
+	payload := model.Payload{Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
+	// Note: expected Values
+	exp := model.Todo{
+		ID: targetId,
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
+	}
+
 	// Note: Call POST API
-	postRes, err := http.Post(ts.URL + "/todo/5", "application/json", bytes.NewBuffer(payloadJson))
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	defer postRes.Body.Close()
-
-	if postRes.StatusCode != http.StatusCreated {
-		t.Fatalf("[Update Todo Item] Expected status code 201, got %v", postRes.StatusCode)
-	}
-
-	// Note: Call GET API
-	getRes, err := http.Get(ts.URL + "/todo")
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	defer getRes.Body.Close()
-
+	client := &http.Client{}
+	req, err := http.NewRequest("PUT", ts.URL + "/todo/" + targetId, bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var responseData []model.Todo
-	json.NewDecoder(getRes.Body).Decode(&responseData)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer res.Body.Close()
 
+	var resData model.Todo
+	json.NewDecoder(res.Body).Decode(&resData)
 
-	if getRes.StatusCode != http.StatusOK {
-		t.Fatalf("[Update Todo Item] Expected status code 200, got %v", getRes.StatusCode)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("[Update Todo Item] Expected status code 201, got %v", res.StatusCode)
 	}
 
-	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("[Update Todo Item] responseData = %v, want %v", responseData, exp)
+	if !reflect.DeepEqual(exp, resData) {
+		t.Fatalf("[Update Todo Item] resData = %v, want %v", exp, resData)
 	}
 }
 
@@ -189,36 +181,42 @@ func TestUpdateStateById(t *testing.T) {
 	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
-	exp := []model.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "Backlog",	Details: "5番目に登録されたTodo",	Priority: "P1"},
-	}
-
-	postRes, err := http.Post(ts.URL + "/todo/5/status/Backlog", "application/json", nil)
+	targetId := "5"
+	payload := model.StatusPayload{Status: "Backlog"}
+	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer postRes.Body.Close()
 
-	// Note: Call POST API
-	getRes, err := http.Get(ts.URL + "/todo")
+	exp := model.Todo{
+		ID: targetId,
+		Title: "5番目TODO",
+		Status: payload.Status,
+		Details: "5番目に登録されたTodo",
+		Priority: "P1",
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest("PATCH", ts.URL + "/todo/" + targetId + "/status", bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer getRes.Body.Close()
 
-	var responseData []model.Todo
-	json.NewDecoder(getRes.Body).Decode(&responseData)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer res.Body.Close()
 
-	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
-		t.Fatalf("[Update Todo Item] Expected status code 200, got %v and %v", postRes.StatusCode, getRes.StatusCode)
+	var resData model.Todo
+	json.NewDecoder(res.Body).Decode(&resData)
+
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("[Update Todo Item] Expected status code 201, got %v", res.StatusCode)
 	}
 
-	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("[Update Todo Item] responseData = %v, want %v", responseData, exp)
+	if !reflect.DeepEqual(exp, resData) {
+		t.Fatalf("[Update Todo Item] resData = %v, want %v", exp, resData)
 	}
 }
 
@@ -228,6 +226,7 @@ func TestDeleteItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: expected Values
+	targetId := "5"
 	exp := []model.Todo{
 		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
 		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
@@ -237,30 +236,24 @@ func TestDeleteItem(t *testing.T) {
 
 	// Note: Call DELETE API
 	client := &http.Client{}
-	req, err := http.NewRequest("DELETE", ts.URL + "/todo/5", nil)
+	req, err := http.NewRequest("DELETE", ts.URL + "/todo/" + targetId, nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	deleteRes, err := client.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer deleteRes.Body.Close()
+	defer res.Body.Close()
 
-	// Note: Call GET API
-	getRes, err := http.Get(ts.URL + "/todo")
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	defer getRes.Body.Close()
+	var resData []model.Todo
+	json.NewDecoder(res.Body).Decode(&resData)
 
-	if deleteRes.StatusCode != http.StatusOK || getRes.StatusCode != http.StatusOK {
-		t.Fatalf("Expected status code 200, got %v and %v", deleteRes.StatusCode, getRes.StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("[Update Todo Item] Expected status code 200, got %v", res.StatusCode)
 	}
 
-	var responseData []model.Todo
-	json.NewDecoder(getRes.Body).Decode(&responseData)
-	if !reflect.DeepEqual(responseData, exp) {
-		t.Fatalf("responseData = %v, want %v", responseData, exp)
+	if !reflect.DeepEqual(exp, resData) {
+		t.Fatalf("resData = %v, want %v", exp, resData)
 	}
 }

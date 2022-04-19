@@ -1,11 +1,9 @@
 package model
 
-type Id int
-
 type Status string
 
 type Todo struct {
-  ID        int     `json:"id"`
+  ID        string  `json:"id"`
   Title     string  `json:"title"`
   Status    string  `json:"status"`
   Details   string  `json:"details"`
