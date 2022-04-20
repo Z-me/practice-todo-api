@@ -264,47 +264,81 @@ func TestAnomaly(t *testing.T) {
 	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
-	cases := map[string]struct{
+	cases := []struct{
+		name	 	string
 		url 		string
 		client	string
 		payload string
 		expect 	int
 	}{
-		"Get undefined": {
-			url: 			"/todo/error",
+		{
+			name: 		"[404-01]GET 404",
+			url: 			"/error",
 			client:   "GET",
 			payload: 	"",
 			expect: 	http.StatusNotFound,
 		},
-		"POST No payload": {
+		{
+			name: 		"[404-02]POST 404",
+			url: 			"/error",
+			client:   "POST",
+			payload: 	"",
+			expect: 	http.StatusNotFound,
+		},
+		{
+			name: 		"[404-03]PUT 404",
+			url: 			"/error",
+			client:   "PUT",
+			payload: 	"",
+			expect: 	http.StatusNotFound,
+		},
+		{
+			name: 		"[404-04]DELETE 404",
+			url: 			"/error",
+			client:   "DELETE",
+			payload: 	"",
+			expect: 	http.StatusNotFound,
+		},
+		{
+			name:			"[400-01]no payload on new item",
 			url: 			"/todo",
 			client:   "POST",
 			payload: 	"",
 			expect: 	http.StatusBadRequest,
 		},
-		"update bad request": {
+		{
+			name:			"[400-02]invalid payload on create new item",
+			url: 			"/todo",
+			client:   "POST",
+			payload: 	`{"message":"invalid payload"}`,
+			expect: 	http.StatusBadRequest,
+		},
+		{
+			name:			"[400-03]invalid payload on change item",
 			url: 			"/todo/error",
 			client:   "PUT",
 			payload: 	`{"message":"missing"}`,
 			expect: 	http.StatusBadRequest,
 		},
-		"update 404": {
+		{
+			name:   	"[400-04]invalid Method on create item",
 			url: 			"/todo/1",
 			client:   "PUT",
 			payload: 	"",
 			expect: 	http.StatusBadRequest,
 		},
-		"update bad request items": {
+		{
+			name:			"[400-05]invalid payload on change item",
 			url: 			"/todo/1/status",
 			client:   "PATCH",
-			payload: 	"",
+			payload: 	`{"message":"invalid payload"}`,
 			expect: 	http.StatusBadRequest,
 		},
 	}
 
 	for _, c := range cases {
 		c := c
-		t.Run(caseNameHelper(t, c.url, c.client, c.payload, c.expect), func(t *testing.T) {
+		t.Run(caseNameHelper(t, c.name,  c.client, c.url), func(t *testing.T) {
 			client := &http.Client{}
 			req, err := http.NewRequest(c.client, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
@@ -324,7 +358,7 @@ func TestAnomaly(t *testing.T) {
 	}
 }
 
-func caseNameHelper(t *testing.T, url string, client string, payload string, expect int) string {
+func caseNameHelper(t *testing.T, name string, client string, url string) string {
 	t.Helper()
-	return strconv.Itoa(expect) + "のテスト\nurl: ["+ client +"] "+url +"\nexpect: "+ payload
+	return name + "のテスト :: [" + client + "] " + url
 }
