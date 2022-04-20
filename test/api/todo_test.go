@@ -22,11 +22,11 @@ func TestGetTodoList(t *testing.T) {
 
 	// Note: expected Values
 	exp := []model.Todo{
-		{ID: "1",	Title: "最初のTODO", Status: "Done", Details: "最初に登録されたTodo", Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+		{ID: 1,	Title: "最初のTODO", Status: "Done", Details: "最初に登録されたTodo", Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
 
 	// Note: Call API
@@ -55,7 +55,7 @@ func TestGetTodoItemById(t *testing.T) {
 
 	// Note: expected Values
 	exp := model.Todo{
-		ID: "1",
+		ID: 1,
 		Title: "最初のTODO",
 		Status: "Done",
 		Details: "最初に登録されたTodo",
@@ -88,14 +88,14 @@ func TestAddItem(t *testing.T) {
 
 	// Note: expected Values
 	exp := []model.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
-		{ID: "6",	Title: "6番目TODO",	Status: "InProgress",	Details: "6番目に登録されたTodo",	Priority: "P0"},
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+		{ID: 6,	Title: "6番目TODO",	Status: "InProgress",	Details: "6番目に登録されたTodo",	Priority: "P0"},
 	}
-	payload := model.Todo{ID: "6",Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
+	payload := model.Todo{ID: 6,Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -136,7 +136,7 @@ func TestUpdateItem(t *testing.T) {
 	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
-	targetId := "5"
+	targetId := 5
 	payload := model.Payload{Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
@@ -154,7 +154,7 @@ func TestUpdateItem(t *testing.T) {
 
 	// Note: Call POST API
 	client := &http.Client{}
-	req, err := http.NewRequest("PUT", ts.URL + "/todo/" + targetId, bytes.NewBuffer(payloadJson))
+	req, err := http.NewRequest("PUT", ts.URL + "/todo/" + strconv.Itoa(targetId), bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -182,7 +182,7 @@ func TestUpdateStateById(t *testing.T) {
 	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
-	targetId := "5"
+	targetId := 5
 	payload := model.StatusPayload{Status: "Backlog"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
@@ -198,7 +198,7 @@ func TestUpdateStateById(t *testing.T) {
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest("PATCH", ts.URL + "/todo/" + targetId + "/status", bytes.NewBuffer(payloadJson))
+	req, err := http.NewRequest("PATCH", ts.URL + "/todo/" + strconv.Itoa(targetId) + "/status", bytes.NewBuffer(payloadJson))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -227,17 +227,17 @@ func TestDeleteItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: expected Values
-	targetId := "5"
+	targetId := 5
 	exp := []model.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
 	}
 
 	// Note: Call DELETE API
 	client := &http.Client{}
-	req, err := http.NewRequest("DELETE", ts.URL + "/todo/" + targetId, nil)
+	req, err := http.NewRequest("DELETE", ts.URL + "/todo/" + strconv.Itoa(targetId), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -282,11 +282,11 @@ func TestAnomaly(t *testing.T) {
 			payload: 	"",
 			expect: 	http.StatusBadRequest,
 		},
-		"update Missing": {
+		"update bad request": {
 			url: 			"/todo/error",
 			client:   "PUT",
 			payload: 	`{"message":"missing"}`,
-			expect: 	http.StatusNotFound,
+			expect: 	http.StatusBadRequest,
 		},
 		"update 404": {
 			url: 			"/todo/1",

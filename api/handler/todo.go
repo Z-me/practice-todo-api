@@ -18,11 +18,11 @@ var nextId int
 // NOTE: Default Todo
 func LoadInitialData() {
 	todoList = []model.Todo{
-		{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
 	nextId = 6
 }
@@ -32,7 +32,7 @@ func GetTodoList(c *gin.Context) {
 }
 
 func GetTodoItemById(c *gin.Context) {
-	id := c.Param("id")
+	id, _ := strconv.Atoi(c.Param("id"))
 	for _, item := range todoList {
 		if item.ID == id {
 			c.IndentedJSON(http.StatusOK, item)
@@ -50,7 +50,7 @@ func AddNewTodo(c *gin.Context) {
 	}
 
 	newTodo := model.Todo {
-		ID: strconv.Itoa(nextId),
+		ID: nextId,
 		Title: payload.Title,
 		Status: payload.Status,
 		Details: payload.Details,
@@ -63,7 +63,7 @@ func AddNewTodo(c *gin.Context) {
 }
 
 func UpdateTodoItem(c *gin.Context) {
-	id := c.Param("id")
+	id, _ := strconv.Atoi(c.Param("id"))
 	var payload model.Payload
 
 	if err := c.BindJSON(&payload); err != nil {
@@ -91,7 +91,7 @@ func UpdateTodoItem(c *gin.Context) {
 }
 
 func UpdateTodoState(c *gin.Context) {
-	id := c.Param("id")
+	id, _ := strconv.Atoi(c.Param("id"))
 	var payload model.StatusPayload
 
 	if err := c.BindJSON(&payload); err != nil {
@@ -112,7 +112,7 @@ func UpdateTodoState(c *gin.Context) {
 }
 
 func DeleteTodoListItem(c *gin.Context) {
-	id := c.Param("id")
+	id, _ := strconv.Atoi(c.Param("id"))
 	for i, item := range todoList {
 		if item.ID == id {
 			todoList = append(todoList[:i], todoList[i + 1:]...)
