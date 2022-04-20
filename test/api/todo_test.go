@@ -322,19 +322,6 @@ func TestAnomaly(t *testing.T) {
 			}
 		})
 	}
-
-	/*
-	res, err := http.Get(ts.URL + "/todo/error")
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusNotFound {
-		t.Fatalf("[Update Todo Item] Expected status code 400, got %v", res.StatusCode)
-	}
-	*/
-
 }
 
 func caseNameHelper(t *testing.T, url string, client string, payload string, expect int) string {
