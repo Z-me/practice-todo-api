@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strconv"
 
 	"bytes"
 	"encoding/json"
@@ -256,4 +257,87 @@ func TestDeleteItem(t *testing.T) {
 	if !reflect.DeepEqual(exp, resData) {
 		t.Fatalf("resData = %v, want %v", exp, resData)
 	}
+}
+
+func TestAnomaly(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(api.Router())
+	defer ts.Close()
+
+	cases := map[string]struct{
+		url 		string
+		client	string
+		payload string
+		expect 	int
+	}{
+		"Get undefined": {
+			url: 			"/todo/error",
+			client:   "GET",
+			payload: 	"",
+			expect: 	http.StatusNotFound,
+		},
+		"POST No payload": {
+			url: 			"/todo",
+			client:   "POST",
+			payload: 	"",
+			expect: 	http.StatusBadRequest,
+		},
+		"update Missing": {
+			url: 			"/todo/error",
+			client:   "PUT",
+			payload: 	`{"message":"missing"}`,
+			expect: 	http.StatusNotFound,
+		},
+		"update 404": {
+			url: 			"/todo/1",
+			client:   "PUT",
+			payload: 	"",
+			expect: 	http.StatusBadRequest,
+		},
+		"update bad request items": {
+			url: 			"/todo/1/status",
+			client:   "PATCH",
+			payload: 	"",
+			expect: 	http.StatusBadRequest,
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(caseNameHelper(t, c.url, c.client, c.payload, c.expect), func(t *testing.T) {
+			client := &http.Client{}
+			req, err := http.NewRequest(c.client, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			res, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != c.expect {
+				t.Fatalf("[Update Todo Item] Expected status code %v, got %v", c.expect, res.StatusCode)
+			}
+		})
+	}
+
+	/*
+	res, err := http.Get(ts.URL + "/todo/error")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Fatalf("[Update Todo Item] Expected status code 400, got %v", res.StatusCode)
+	}
+	*/
+
+}
+
+func caseNameHelper(t *testing.T, url string, client string, payload string, expect int) string {
+	t.Helper()
+	return strconv.Itoa(expect) + "のテスト\nurl: ["+ client +"] "+url +"\nexpect: "+ payload
 }
