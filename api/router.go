@@ -1,11 +1,11 @@
-package todoApi
+package api
 
 import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 
-	handler "github.com/Z-me/practice-todo-api/api/handler"
+	"github.com/Z-me/practice-todo-api/api/handler"
 )
 
 func Test() {
@@ -14,12 +14,14 @@ func Test() {
 
 func Router() *gin.Engine {
 	router := gin.Default()
+
+	handler.LoadInitialData()
 	router.GET("/todo", handler.GetTodoList)
-	router.GET("/todo/:id", handler.GetTodoListItemById)
-	router.POST("/todo", handler.PostTodoItem)
-	router.POST("/todo/:id", handler.PostTodoListItemById)
-	router.POST("/todo/:id/status/:status", handler.PostTodoListItemUpdateStateById)
-	router.DELETE("/todo/:id", handler.DeleteTodoListItemById)
+	router.GET("/todo/:id", handler.GetTodoItemById)
+	router.POST("/todo", handler.AddNewTodo)
+	router.PUT("/todo/:id", handler.UpdateTodoItem)
+	router.PATCH("/todo/:id/status", handler.UpdateTodoState)
+	router.DELETE("/todo/:id", handler.DeleteTodoListItem)
 
 	return router
 }

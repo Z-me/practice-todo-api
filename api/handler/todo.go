@@ -3,27 +3,39 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	todoType "github.com/Z-me/practice-todo-api/api/types/todo"
+	"github.com/Z-me/practice-todo-api/api/model"
 )
 
+var todoList = []model.Todo{}
+// Note: Structのリテラルとしてmodel.Idだと使えないらしい
+// var nextId model.Id
+var nextId int
+
 // NOTE: Default Todo
-var todoList = []todoType.Todo{
-	{ID: "1",	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-	{ID: "2",	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-	{ID: "3",	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-	{ID: "4",	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-	{ID: "5",	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+func LoadInitialData() {
+	todoList = []model.Todo{
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+	}
+	nextId = 6
 }
 
 func GetTodoList(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, todoList)
 }
 
-func GetTodoListItemById(c *gin.Context) {
-	id := c.Param("id")
+func GetTodoItemById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
 	for _, item := range todoList {
 		if item.ID == id {
 			c.IndentedJSON(http.StatusOK, item)
@@ -33,36 +45,43 @@ func GetTodoListItemById(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
 }
 
-func PostTodoItem(c *gin.Context) {
-	var newTodo todoType.Todo
+func AddNewTodo(c *gin.Context) {
+	var payload model.Payload
 
-	if err := c.BindJSON(&newTodo); err != nil {
+	if err := c.BindJSON(&payload); err != nil {
 		return
 	}
+
+	newTodo := model.Todo {
+		ID: nextId,
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
+	}
+	nextId +=  1
 
 	todoList = append(todoList, newTodo)
 	c.IndentedJSON(http.StatusCreated, newTodo)
 }
 
-func DeleteTodoListItemById(c *gin.Context) {
-	id := c.Param("id")
-	for i, item := range todoList {
-		if item.ID == id {
-			c.IndentedJSON(http.StatusOK, item)
-			todoList = append(todoList[:i], todoList[i + 1:]...)
-			fmt.Println("Deleted Todolist", todoList)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
-}
-
-func PostTodoListItemById(c *gin.Context) {
-	id := c.Param("id")
-	var newTodo todoType.Todo
-
-	if err := c.BindJSON(&newTodo); err != nil {
+func UpdateTodoItem(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
 		return
+	}
+	var payload model.Payload
+
+	if err := c.BindJSON(&payload); err != nil {
+		return
+	}
+
+	newTodo := model.Todo {
+		ID: id,
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
 	}
 
 	for i, item := range todoList {
@@ -75,17 +94,23 @@ func PostTodoListItemById(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
-	// todoList = append(todoList, newTodo)
 }
 
-func PostTodoListItemUpdateStateById(c *gin.Context) {
-	id := c.Param("id")
-	status := c.Param("status")
+func UpdateTodoState(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
+	var payload model.StatusPayload
+
+	if err := c.BindJSON(&payload); err != nil {
+		return
+	}
 
 	for i, item := range todoList {
 		if item.ID == id {
 			target := item
-			target.Status = status
+			target.Status = payload.Status
 			tmp := append(todoList[:i], target)
 			todoList = append(tmp, todoList[i + 1:]...)
 			fmt.Println("Updated Todolist", target)
@@ -93,5 +118,19 @@ func PostTodoListItemUpdateStateById(c *gin.Context) {
 			return
 		}
 	}
+}
 
+func DeleteTodoListItem(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
+	for i, item := range todoList {
+		if item.ID == id {
+			todoList = append(todoList[:i], todoList[i + 1:]...)
+			c.IndentedJSON(http.StatusOK, todoList)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
 }
