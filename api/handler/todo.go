@@ -32,7 +32,10 @@ func GetTodoList(c *gin.Context) {
 }
 
 func GetTodoItemById(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
 	for _, item := range todoList {
 		if item.ID == id {
 			c.IndentedJSON(http.StatusOK, item)
@@ -63,7 +66,10 @@ func AddNewTodo(c *gin.Context) {
 }
 
 func UpdateTodoItem(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
 	var payload model.Payload
 
 	if err := c.BindJSON(&payload); err != nil {
@@ -91,7 +97,10 @@ func UpdateTodoItem(c *gin.Context) {
 }
 
 func UpdateTodoState(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
 	var payload model.StatusPayload
 
 	if err := c.BindJSON(&payload); err != nil {
@@ -112,7 +121,10 @@ func UpdateTodoState(c *gin.Context) {
 }
 
 func DeleteTodoListItem(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
 	for i, item := range todoList {
 		if item.ID == id {
 			todoList = append(todoList[:i], todoList[i + 1:]...)
