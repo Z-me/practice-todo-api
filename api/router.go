@@ -17,7 +17,7 @@ func Router() *gin.Engine {
 
 	handler.LoadInitialData()
 	router.GET("/todo", handler.GetTodoList)
-	router.GET("/todo/:id", handler.GetTodoItemById)
+	router.GET("/todo/:id", handler.GetTodoItemByID)
 	router.POST("/todo", handler.AddNewTodo)
 	router.PUT("/todo/:id", handler.UpdateTodoItem)
 	router.PATCH("/todo/:id/status", handler.UpdateTodoState)

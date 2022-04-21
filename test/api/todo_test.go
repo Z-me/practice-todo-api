@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/Z-me/practice-todo-api/api"
-	"github.com/Z-me/practice-todo-api/api/model"
+	"github.com/Z-me/practice-todo-api/api/handler"
 )
 
 func TestGetTodoList(t *testing.T) {
@@ -21,12 +21,12 @@ func TestGetTodoList(t *testing.T) {
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := []model.Todo{
-		{ID: 1,	Title: "最初のTODO", Status: "Done", Details: "最初に登録されたTodo", Priority: "P0"},
-		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+	exp := []handler.Todo{
+		{ID: 1,	Title: "最初のTODO", 	Status: "Done", 		Details: "最初に登録されたTodo", 	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",		Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",		Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",		Status: "Backlog",		Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",		Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
 	}
 
 	// Note: Call API
@@ -36,7 +36,7 @@ func TestGetTodoList(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var resData []model.Todo
+	var resData []handler.Todo
 	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusOK {
@@ -48,18 +48,18 @@ func TestGetTodoList(t *testing.T) {
 	}
 }
 
-func TestGetTodoItemById(t *testing.T) {
+func TestGetTodoItemByID(t *testing.T) {
 	// Note: Start test Server
 	ts := httptest.NewServer(api.Router())
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := model.Todo{
-		ID: 1,
-		Title: "最初のTODO",
-		Status: "Done",
-		Details: "最初に登録されたTodo",
-		Priority: "P0",
+	exp := handler.Todo{
+		ID: 		1,
+		Title: 		"最初のTODO",
+		Status: 	"Done",
+		Details: 	"最初に登録されたTodo",
+		Priority: 	"P0",
 	}
 
 	// Note: Call API
@@ -69,7 +69,7 @@ func TestGetTodoItemById(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var resData model.Todo
+	var resData handler.Todo
 	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusOK {
@@ -87,15 +87,15 @@ func TestAddItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: expected Values
-	exp := []model.Todo{
-		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
-		{ID: 6,	Title: "6番目TODO",	Status: "InProgress",	Details: "6番目に登録されたTodo",	Priority: "P0"},
+	exp := []handler.Todo{
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",			Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",		Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",		Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",		Status: "Backlog",		Details: "4番目に登録されたTodo",	Priority: "P3"},
+		{ID: 5,	Title: "5番目TODO",		Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
+		{ID: 6,	Title: "6番目TODO",		Status: "InProgress",	Details: "6番目に登録されたTodo",	Priority: "P0"},
 	}
-	payload := model.Todo{ID: 6,Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
+	payload := handler.Todo{ID: 6,Title: "6番目TODO",Status: "InProgress",Details: "6番目に登録されたTodo",Priority: "P0"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -119,7 +119,7 @@ func TestAddItem(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var resData []model.Todo
+	var resData []handler.Todo
 	json.NewDecoder(getRes.Body).Decode(&resData)
 
 	if postRes.StatusCode != http.StatusCreated || getRes.StatusCode != http.StatusOK {
@@ -137,19 +137,19 @@ func TestUpdateItem(t *testing.T) {
 	defer ts.Close()
 
 	targetId := 5
-	payload := model.Payload{Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
+	payload := handler.Payload{Title: "更新された5番目TODO",Status: "Done",Details: "5番目に登録され、その後更新されたTodo",Priority: "P1"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
 	// Note: expected Values
-	exp := model.Todo{
-		ID: targetId,
-		Title: payload.Title,
-		Status: payload.Status,
-		Details: payload.Details,
-		Priority: payload.Priority,
+	exp := handler.Todo{
+		ID: 		targetId,
+		Title: 		payload.Title,
+		Status: 	payload.Status,
+		Details: 	payload.Details,
+		Priority: 	payload.Priority,
 	}
 
 	// Note: Call POST API
@@ -165,7 +165,7 @@ func TestUpdateItem(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var resData model.Todo
+	var resData handler.Todo
 	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusCreated {
@@ -183,18 +183,18 @@ func TestUpdateStateById(t *testing.T) {
 	defer ts.Close()
 
 	targetId := 5
-	payload := model.StatusPayload{Status: "Backlog"}
+	payload := handler.StatusPayload{Status: "Backlog"}
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	exp := model.Todo{
-		ID: targetId,
-		Title: "5番目TODO",
-		Status: payload.Status,
-		Details: "5番目に登録されたTodo",
-		Priority: "P1",
+	exp := handler.Todo{
+		ID: 		targetId,
+		Title: 		"5番目TODO",
+		Status: 	payload.Status,
+		Details: 	"5番目に登録されたTodo",
+		Priority: 	"P1",
 	}
 
 	client := &http.Client{}
@@ -202,14 +202,14 @@ func TestUpdateStateById(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
+	defer req.Body.Close()
 
 	res, err := client.Do(req)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer res.Body.Close()
 
-	var resData model.Todo
+	var resData handler.Todo
 	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusCreated {
@@ -228,11 +228,11 @@ func TestDeleteItem(t *testing.T) {
 
 	// Note: expected Values
 	targetId := 5
-	exp := []model.Todo{
-		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
+	exp := []handler.Todo{
+		{ID: 1,	Title: "最初のTODO",	Status: "Done",			Details: "最初に登録されたTodo",	Priority: "P0"},
+		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",		Details: "2番目に登録されたTodo",	Priority: "P1"},
+		{ID: 3,	Title: "3番目TODO",		Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
+		{ID: 4,	Title: "4番目TODO",		Status: "Backlog",		Details: "4番目に登録されたTodo",	Priority: "P3"},
 	}
 
 	// Note: Call DELETE API
@@ -247,7 +247,7 @@ func TestDeleteItem(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	var resData []model.Todo
+	var resData []handler.Todo
 	json.NewDecoder(res.Body).Decode(&resData)
 
 	if res.StatusCode != http.StatusOK {
@@ -265,72 +265,72 @@ func TestAnomaly(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct{
-		name	 	string
-		url 		string
+		name	string
+		url 	string
 		client	string
 		payload string
 		expect 	int
 	}{
 		{
-			name: 		"[404-01]GET 404",
-			url: 			"/error",
-			client:   "GET",
+			name:		"[404-01]GET 404",
+			url: 		"/error",
+			client:   	"GET",
 			payload: 	"",
 			expect: 	http.StatusNotFound,
 		},
 		{
 			name: 		"[404-02]POST 404",
-			url: 			"/error",
-			client:   "POST",
+			url: 		"/error",
+			client:		"POST",
 			payload: 	"",
-			expect: 	http.StatusNotFound,
+			expect:		http.StatusNotFound,
 		},
 		{
 			name: 		"[404-03]PUT 404",
-			url: 			"/error",
-			client:   "PUT",
+			url: 		"/error",
+			client:   	"PUT",
 			payload: 	"",
 			expect: 	http.StatusNotFound,
 		},
 		{
 			name: 		"[404-04]DELETE 404",
-			url: 			"/error",
-			client:   "DELETE",
+			url: 		"/error",
+			client:   	"DELETE",
 			payload: 	"",
 			expect: 	http.StatusNotFound,
 		},
 		{
-			name:			"[400-01]no payload on new item",
-			url: 			"/todo",
-			client:   "POST",
+			name:		"[400-01]no payload on new item",
+			url: 		"/todo",
+			client:   	"POST",
 			payload: 	"",
 			expect: 	http.StatusBadRequest,
 		},
 		{
-			name:			"[400-02]invalid payload on create new item",
-			url: 			"/todo",
-			client:   "POST",
+			name:		"[400-02]invalid payload on create new item",
+			url: 		"/todo",
+			client:   	"POST",
 			payload: 	`{"message":"invalid payload"}`,
 			expect: 	http.StatusBadRequest,
 		},
 		{
-			name:			"[400-03]invalid payload on change item",
-			url: 			"/todo/error",
-			client:   "PUT",
+			name:		"[400-03]invalid payload on change item",
+			url: 		"/todo/error",
+			client:   	"PUT",
 			payload: 	`{"message":"missing"}`,
 			expect: 	http.StatusBadRequest,
 		},
 		{
 			name:   	"[400-04]invalid Method on create item",
-			url: 			"/todo/1",
-			client:   "PUT",
+			url: 		"/todo/1",
+			client:   	"PUT",
 			payload: 	"",
 			expect: 	http.StatusBadRequest,
 		},
 		{
-			name:			"[400-05]invalid payload on change item",
-			url: 			"/todo/1/status",
-			client:   "PATCH",
+			name:		"[400-05]invalid payload on change item",
+			url: 		"/todo/1/status",
+			client:   	"PATCH",
 			payload: 	`{"message":"invalid payload"}`,
 			expect: 	http.StatusBadRequest,
 		},
