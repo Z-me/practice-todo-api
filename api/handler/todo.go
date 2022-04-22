@@ -62,17 +62,7 @@ func GetTodoItemByID(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad Request: id"})
 	}
 
-	result := db.GetTodoItemByID(c, uint(id))
-	c.IndentedJSON(http.StatusOK, result)
-	/*
-	for _, item := range todoList {
-		if item.ID == id {
-			c.IndentedJSON(http.StatusOK, item)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
-	*/
+	c.IndentedJSON(http.StatusOK, db.GetTodoItemByID(c, uint(id)))
 }
 
 // AddNewTodo では、POSTでItemを追加する
@@ -91,18 +81,6 @@ func AddNewTodo(c *gin.Context) {
 			Details: payload.Details,
 			Priority: payload.Priority,
 		})
-	/*
-	newTodo := Todo {
-		ID: nextId,
-		Title: payload.Title,
-		Status: payload.Status,
-		Details: payload.Details,
-		Priority: payload.Priority,
-	}
-	nextId +=  1
-
-	todoList = append(todoList, newTodo)
-	*/
 	c.IndentedJSON(http.StatusCreated, newTodo)
 }
 
@@ -120,24 +98,13 @@ func UpdateTodoItem(c *gin.Context) {
 		return
 	}
 
-	newTodo := Todo {
-		ID: id,
+	updated := db.UpdateItem(c, uint(id), model.Payload{
 		Title: payload.Title,
 		Status: payload.Status,
 		Details: payload.Details,
 		Priority: payload.Priority,
-	}
-
-	for i, item := range todoList {
-		if item.ID == id {
-			tmp := append(todoList[:i], newTodo)
-			todoList = append(tmp, todoList[i + 1:]...)
-			fmt.Println("Updated Todolist", newTodo)
-			c.IndentedJSON(http.StatusCreated, newTodo)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+	})
+	c.IndentedJSON(http.StatusCreated, updated)
 }
 
 // UpdateTodoState ではIDを指定したITEMのStatusを更新する

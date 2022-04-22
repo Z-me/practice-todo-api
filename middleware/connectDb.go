@@ -135,3 +135,32 @@ func AddNewTodo(c *gin.Context, payload model.Payload) model.Todo {
 	}
 	return newTodo
 }
+
+// UpdateItem はDB上から指定のItemの情報を更新
+func UpdateItem(c *gin.Context, id uint, payload model.Payload) model.Todo {
+	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
+	}
+	handleDb, err := db.DB()
+	defer handleDb.Close()
+
+	target := model.Todo{}
+	if err := db.Find(&target, "id = ?", id).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
+	}
+
+	updated := model.Todo{
+		ID: id,
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
+	}
+
+	if err := db.Model(&target).Updates(&updated).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to create new item"})
+	}
+	return updated
+}
