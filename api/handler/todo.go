@@ -52,16 +52,19 @@ func LoadInitialData() {
 
 // GetTodoList はGETでTODOリストを取得する
 func GetTodoList(c *gin.Context) {
-	// c.IndentedJSON(http.StatusOK, todoList)
-	c.IndentedJSON(http.StatusOK, db.GetTodoList())
+	c.IndentedJSON(http.StatusOK, db.GetTodoList(c))
 }
 
 // GetTodoItemByID ではIDから任意のItemを取得する
 func GetTodoItemByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad Request: id"})
 	}
+
+	result := db.GetTodoItemByID(c, uint(id))
+	c.IndentedJSON(http.StatusOK, result)
+	/*
 	for _, item := range todoList {
 		if item.ID == id {
 			c.IndentedJSON(http.StatusOK, item)
@@ -69,6 +72,7 @@ func GetTodoItemByID(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+	*/
 }
 
 // AddNewTodo では、POSTでItemを追加する
@@ -80,12 +84,13 @@ func AddNewTodo(c *gin.Context) {
 		return
 	}
 
-	newTodo := db.AddNewTodo(model.Payload{
-		Title: payload.Title,
-		Status: payload.Status,
-		Details: payload.Details,
-		Priority: payload.Priority,
-	})
+	newTodo := db.AddNewTodo(c,
+		model.Payload{
+			Title: payload.Title,
+			Status: payload.Status,
+			Details: payload.Details,
+			Priority: payload.Priority,
+		})
 	/*
 	newTodo := Todo {
 		ID: nextId,
