@@ -13,3 +13,10 @@ type Todo struct {
 }
 
 type TodoList []Todo
+
+type Payload struct {
+  Title     string
+  Status    string
+  Details   string
+  Priority  string
+}

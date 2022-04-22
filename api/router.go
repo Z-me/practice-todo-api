@@ -6,10 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/Z-me/practice-todo-api/api/handler"
+	db "github.com/Z-me/practice-todo-api/middleware"
 )
 
 func Test() {
-	fmt.Println("Open Todo API")
+	nextId := db.GetNextID()
+	fmt.Println("Open Todo API: ", nextId)
 }
 
 func Router() *gin.Engine {

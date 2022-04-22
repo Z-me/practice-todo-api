@@ -1,12 +1,11 @@
 package main
 
 import (
-	"github.com/Z-me/practice-todo-api/middleware"
+	"github.com/Z-me/practice-todo-api/api"
 )
 
 func main() {
-	middleware.ConnectDb()
-	// api.Test()
-	// api.Router().Run("localhost:8080")
-	// todoApi.Router().Run()
+	// db.ConnectDb()
+	api.Test()
+	api.Router().Run("localhost:8080")
 }

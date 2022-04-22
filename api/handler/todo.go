@@ -6,6 +6,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/Z-me/practice-todo-api/api/model"
+	db "github.com/Z-me/practice-todo-api/middleware"
 )
 
 type Status string
@@ -49,7 +52,8 @@ func LoadInitialData() {
 
 // GetTodoList はGETでTODOリストを取得する
 func GetTodoList(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, todoList)
+	// c.IndentedJSON(http.StatusOK, todoList)
+	c.IndentedJSON(http.StatusOK, db.GetTodoList())
 }
 
 // GetTodoItemByID ではIDから任意のItemを取得する
@@ -76,6 +80,13 @@ func AddNewTodo(c *gin.Context) {
 		return
 	}
 
+	newTodo := db.AddNewTodo(model.Payload{
+		Title: payload.Title,
+		Status: payload.Status,
+		Details: payload.Details,
+		Priority: payload.Priority,
+	})
+	/*
 	newTodo := Todo {
 		ID: nextId,
 		Title: payload.Title,
@@ -86,6 +97,7 @@ func AddNewTodo(c *gin.Context) {
 	nextId +=  1
 
 	todoList = append(todoList, newTodo)
+	*/
 	c.IndentedJSON(http.StatusCreated, newTodo)
 }
 
