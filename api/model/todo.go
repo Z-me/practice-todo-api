@@ -20,3 +20,7 @@ type Payload struct {
   Details   string
   Priority  string
 }
+
+type Status struct {
+  Status    string
+}

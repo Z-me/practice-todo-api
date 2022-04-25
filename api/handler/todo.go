@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,8 +10,9 @@ import (
 	db "github.com/Z-me/practice-todo-api/middleware"
 )
 
-type Status string
+// type Status string
 
+// Todo APIのレスポンスの構造体
 type Todo struct {
   ID        int     `json:"id"`
   Title     string  `json:"title" binding:"required,max=30"`
@@ -21,6 +21,7 @@ type Todo struct {
   Priority  string  `json:"priority" binding:"required,max=1000"`
 }
 
+// Payload APIのDBの新規作成及び更新のPayload
 type Payload struct {
   Title     string  `json:"title" binding:"required,max=30"`
   Status    string  `json:"status" binding:"required"`
@@ -28,6 +29,7 @@ type Payload struct {
   Priority  string  `json:"priority" binding:"required,max=1000"`
 }
 
+// StatusPayload APIのStatusのみ更新する際のPayload
 type StatusPayload struct {
   Status    string `json:"status" binding:"required"`
 }
@@ -121,18 +123,10 @@ func UpdateTodoState(c *gin.Context) {
 		return
 	}
 
-	for i, item := range todoList {
-		if item.ID == id {
-			target := item
-			target.Status = payload.Status
-			tmp := append(todoList[:i], target)
-			todoList = append(tmp, todoList[i + 1:]...)
-			fmt.Println("Updated Todolist", target)
-			c.IndentedJSON(http.StatusCreated, target)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+	updated := db.UpdateItemStatus(c, uint(id), model.Status{
+		Status: payload.Status,
+	})
+	c.IndentedJSON(http.StatusCreated, updated)
 }
 
 // DeleteTodoListItem ではIDで指定されたItemを削除する

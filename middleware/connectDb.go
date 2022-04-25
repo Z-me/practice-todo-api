@@ -160,7 +160,35 @@ func UpdateItem(c *gin.Context, id uint, payload model.Payload) model.Todo {
 	}
 
 	if err := db.Model(&target).Updates(&updated).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to create new item"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}
 	return updated
+}
+
+// UpdateItemStatus はDB上から指定のItemのStatusを更新
+func UpdateItemStatus(c *gin.Context, id uint, status model.Status) model.Todo {
+	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
+	}
+	handleDb, err := db.DB()
+	defer handleDb.Close()
+
+	target := model.Todo{}
+	if err := db.Find(&target, "id = ?", id).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
+	}
+
+	if err := db.Model(&target).Update("Status", status.Status).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
+	}
+
+	return model.Todo{
+		ID: id,
+		Title: target.Title,
+		Status: target.Status,
+		Details: target.Details,
+		Priority: target.Priority,
+	}
 }
