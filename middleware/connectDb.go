@@ -2,10 +2,8 @@ package db
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/Z-me/practice-todo-api/api/model"
-	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	_ "gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -103,15 +101,7 @@ func GetTodoItemByID(id uint) (model.Todo, error) {
 }
 
 // AddNewTodo はDBに指定のPayloadの値を投入
-func AddNewTodo(c *gin.Context, payload model.Payload) model.Todo {
-	// dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
-	}
-	handleDb, err := db.DB()
-	defer handleDb.Close()
-
+func AddNewTodo(payload model.Payload) (model.Todo, error) {
 	newTodo := model.Todo{
 		ID: GetNextID(),
 		Title: payload.Title,
@@ -119,27 +109,12 @@ func AddNewTodo(c *gin.Context, payload model.Payload) model.Todo {
 		Details: payload.Details,
 		Priority: payload.Priority,
 	}
-
-	if err := db.Create(&newTodo).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to create new item"})
-	}
-	return newTodo
+	err := db.Create(&newTodo).Error
+	return newTodo, err
 }
 
 // UpdateItem はDB上から指定のItemの情報を更新
-func UpdateItem(c *gin.Context, id uint, payload model.Payload) model.Todo {
-	// dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
-	}
-	handleDb, err := db.DB()
-	defer handleDb.Close()
-
-	target := model.Todo{}
-	if err := db.Find(&target, "id = ?", id).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
-	}
+func UpdateItem(id uint, payload model.Payload) (model.Todo, error) {
 
 	updated := model.Todo{
 		ID: id,
@@ -149,53 +124,31 @@ func UpdateItem(c *gin.Context, id uint, payload model.Payload) model.Todo {
 		Priority: payload.Priority,
 	}
 
-	if err := db.Model(&target).Updates(&updated).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
+	target := model.Todo{}
+	if err := db.Find(&target, "id = ?", id).Error; err != nil {
+		return updated, err
 	}
-	return updated
+
+	err := db.Model(&target).Updates(&updated).Error
+	return updated, err
 }
 
 // UpdateItemStatus はDB上から指定のItemのStatusを更新
-func UpdateItemStatus(c *gin.Context, id uint, status model.Status) model.Todo {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
-	}
-	handleDb, err := db.DB()
-	defer handleDb.Close()
-
+func UpdateItemStatus(id uint, status model.Status) (model.Todo, error) {
 	target := model.Todo{}
 	if err := db.Find(&target, "id = ?", id).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
+		return model.Todo{}, err
 	}
 
-	if err := db.Model(&target).Update("Status", status.Status).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
-	}
-
-	return model.Todo{
-		ID: id,
-		Title: target.Title,
-		Status: target.Status,
-		Details: target.Details,
-		Priority: target.Priority,
-	}
+	err := db.Model(&target).Update("Status", status.Status).Error
+	return target, err
 }
 
 // DeleteItem は任意のItemを削除
-func DeleteItem(c *gin.Context, id uint) model.Todo {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
-	}
-	handleDb, err := db.DB()
-	defer handleDb.Close()
-
+func DeleteItem(id uint) (model.Todo, error) {
 	target := model.Todo{}
 	if err := db.Find(&target, "id = ?", id).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
+		return model.Todo{}, err
 	}
 
 	result := model.Todo{
@@ -205,10 +158,6 @@ func DeleteItem(c *gin.Context, id uint) model.Todo {
 		Details: target.Details,
 		Priority: target.Priority,
 	}
-
-	if err := db.Delete(&target).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
-	}
-
-	return result
+	err := db.Delete(&target).Error
+	return result, err
 }
