@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ConnectDb は確認用
+/*/ ConnectDb は確認用
 func ConnectDb() {
 	fmt.Println("start conect DB")
 	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
@@ -58,61 +58,53 @@ func ConnectDb() {
 	// DELETE
 	db.Delete(&todo)
 }
+*/
 
-// GetNextID は次に指定するIDを取得する
-func GetNextID() uint {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+var dsn string = "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
+var db *gorm.DB
+var err error
+
+// ConnectDB データベース接続
+func ConnectDB() error {
+	fmt.Println("Connect Database")
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	return err
+}
+
+// DisconnectDB データベースの接続解除
+func DisconnectDB() {
+	handleDb, err := db.DB()
 	if err != nil {
 		panic("failed to connect database")
 	}
-	handleDb, err := db.DB()
 	defer handleDb.Close()
+	fmt.Println("Dis-Connect Database")
+}
 
+// GetNextID は次に指定するIDを取得する
+func GetNextID() uint {
 	todo := model.Todo{}
 	db.Last(&todo)
-
 	return todo.ID + 1
 }
 
 // GetTodoList DBからTodoリストを取得して返却する関数
-func GetTodoList(c *gin.Context) model.TodoList {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
-	}
-	handleDb, err := db.DB()
-	defer handleDb.Close()
-
+func GetTodoList() (model.TodoList, error) {
 	todoList := model.TodoList{}
-	if err := db.Find(&todoList).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
-	}
-	return todoList
+	err := db.Find(&todoList).Error
+	return todoList, err
 }
 
 // GetTodoItemByID はIDをもとにItemを取得する関数
-func GetTodoItemByID(c *gin.Context, id uint) model.Todo {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
-	}
-	handleDb, err := db.DB()
-	defer handleDb.Close()
-
+func GetTodoItemByID(id uint) (model.Todo, error) {
 	todo := model.Todo{}
-	if err := db.Find(&todo, "id = ?", id).Error; err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
-	}
-
-	return todo
+	err := db.Find(&todo, "id = ?", id).Error
+	return todo, err
 }
 
 // AddNewTodo はDBに指定のPayloadの値を投入
 func AddNewTodo(c *gin.Context, payload model.Payload) model.Todo {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
+	// dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
@@ -136,7 +128,7 @@ func AddNewTodo(c *gin.Context, payload model.Payload) model.Todo {
 
 // UpdateItem はDB上から指定のItemの情報を更新
 func UpdateItem(c *gin.Context, id uint, payload model.Payload) model.Todo {
-	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
+	// dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})

@@ -32,9 +32,22 @@ type StatusPayload struct {
   Status    string `json:"status" binding:"required"`
 }
 
+func connectDB(c *gin.Context){
+	if err := db.ConnectDB(); err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
+	}
+}
+
 // GetTodoList はGETでTODOリストを取得する
 func GetTodoList(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, db.GetTodoList(c))
+	connectDB(c)
+	defer db.DisconnectDB()
+
+	todoList, err := db.GetTodoList();
+	if err == nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
+	}
+	c.IndentedJSON(http.StatusOK, todoList)
 }
 
 // GetTodoItemByID ではIDから任意のItemを取得する
@@ -44,7 +57,14 @@ func GetTodoItemByID(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad Request: id"})
 	}
 
-	c.IndentedJSON(http.StatusOK, db.GetTodoItemByID(c, uint(id)))
+	connectDB(c)
+	defer db.DisconnectDB()
+
+	item, err := db.GetTodoItemByID(uint(id))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Target item is not found"})
+	}
+	c.IndentedJSON(http.StatusOK, item)
 }
 
 // AddNewTodo では、POSTでItemを追加する
