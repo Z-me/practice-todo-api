@@ -9,15 +9,16 @@ import (
 	db "github.com/Z-me/practice-todo-api/middleware"
 )
 
+// Test test用
 func Test() {
-	nextId := db.GetNextID()
-	fmt.Println("Open Todo API: ", nextId)
+	nextID := db.GetNextID()
+	fmt.Println("Open Todo API: ", nextID)
 }
 
+// Router main router
 func Router() *gin.Engine {
 	router := gin.Default()
 
-	handler.LoadInitialData()
 	router.GET("/todo", handler.GetTodoList)
 	router.GET("/todo/:id", handler.GetTodoItemByID)
 	router.POST("/todo", handler.AddNewTodo)

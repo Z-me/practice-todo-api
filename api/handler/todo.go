@@ -10,8 +10,6 @@ import (
 	db "github.com/Z-me/practice-todo-api/middleware"
 )
 
-// type Status string
-
 // Todo APIのレスポンスの構造体
 type Todo struct {
   ID        int     `json:"id"`
@@ -32,24 +30,6 @@ type Payload struct {
 // StatusPayload APIのStatusのみ更新する際のPayload
 type StatusPayload struct {
   Status    string `json:"status" binding:"required"`
-}
-
-
-var todoList = []Todo{}
-// Note: Structのリテラルとしてmodel.Idだと使えないらしい
-// var nextId model.Id
-var nextId int
-
-// LoadInitialData では規定のTodoの値を設定
-func LoadInitialData() {
-	todoList = []Todo{
-		{ID: 1,	Title: "最初のTODO",	Status: "Done",	Details: "最初に登録されたTodo",	Priority: "P0"},
-		{ID: 2,	Title: "2番目のTODO",	Status: "Backlog",	Details: "2番目に登録されたTodo",	Priority: "P1"},
-		{ID: 3,	Title: "3番目TODO",	Status: "InProgress",	Details: "3番目に登録されたTodo",	Priority: "P2"},
-		{ID: 4,	Title: "4番目TODO",	Status: "Backlog",	Details: "4番目に登録されたTodo",	Priority: "P3"},
-		{ID: 5,	Title: "5番目TODO",	Status: "InProgress",	Details: "5番目に登録されたTodo",	Priority: "P1"},
-	}
-	nextId = 6
 }
 
 // GetTodoList はGETでTODOリストを取得する
@@ -136,12 +116,7 @@ func DeleteTodoListItem(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad Request: ID"})
 		return
 	}
-	for i, item := range todoList {
-		if item.ID == id {
-			todoList = append(todoList[:i], todoList[i + 1:]...)
-			c.IndentedJSON(http.StatusOK, todoList)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo List Item not found"})
+
+	deleted := db.DeleteItem(c, uint(id))
+	c.IndentedJSON(http.StatusOK, deleted)
 }

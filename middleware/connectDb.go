@@ -18,7 +18,6 @@ func ConnectDb() {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
-		return
 	}
 	handleDb, err := db.DB()
 	defer handleDb.Close()
@@ -66,7 +65,6 @@ func GetNextID() uint {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
-		return 0
 	}
 	handleDb, err := db.DB()
 	defer handleDb.Close()
@@ -191,4 +189,34 @@ func UpdateItemStatus(c *gin.Context, id uint, status model.Status) model.Todo {
 		Details: target.Details,
 		Priority: target.Priority,
 	}
+}
+
+// DeleteItem は任意のItemを削除
+func DeleteItem(c *gin.Context, id uint) model.Todo {
+	dsn := "host=localhost user=hajime.saito dbname=todo_app port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
+	}
+	handleDb, err := db.DB()
+	defer handleDb.Close()
+
+	target := model.Todo{}
+	if err := db.Find(&target, "id = ?", id).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
+	}
+
+	result := model.Todo{
+		ID: id,
+		Title: target.Title,
+		Status: target.Status,
+		Details: target.Details,
+		Priority: target.Priority,
+	}
+
+	if err := db.Delete(&target).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
+	}
+
+	return result
 }
