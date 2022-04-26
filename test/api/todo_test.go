@@ -1,20 +1,93 @@
 package main
 
 import (
-	"reflect"
-	"strconv"
+	// "reflect"
+	// "strconv"
 
-	"bytes"
-	"encoding/json"
-
-	"net/http"
-	"net/http/httptest"
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"gorm.io/driver/postgres"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	// "bytes"
+	// "encoding/json"
+	// "net/http"
+	// "net/http/httptest"
 	"testing"
-
-	"github.com/Z-me/practice-todo-api/api"
-	"github.com/Z-me/practice-todo-api/api/handler"
+	// "github.com/Z-me/practice-todo-api/api"
+	// "github.com/Z-me/practice-todo-api/api/handler"
 )
 
+type v2Suite struct {
+	db      *gorm.DB
+	mock    sqlmock.Sqlmock
+	// student Student
+}
+
+func getDBMock() (*gorm.DB, sqlmock.Sqlmock, error) {
+	s := &v2Suite{}
+    db, mock, err := sqlmock.New()
+    if err != nil {
+        return nil, nil, err
+    }
+
+	dialector := postgres.New(postgres.Config{
+		DSN:                  "sqlmock_db_0",
+		DriverName:           "postgres",
+		Conn:                 db,
+		PreferSimpleProtocol: true,
+	})
+	s.db, err = gorm.Open(dialector, &gorm.Config{})
+    // gdb, err := gorm.Open("postgres", db)
+	// gorm.Open(postgres.Dialector{
+	// 	Config: &mysql.Config{
+	// 		DriverName: "mysql",
+	// 		Conn: db,
+	// 		SkipInitializeWithVersion: true,
+	// 	}
+	// }, &gorm.Config{})
+
+    if err != nil {
+        return nil, nil, err
+    }
+    return s.db, mock, nil
+}
+
+// TestCreateNewItem DBモックした状態での新規作成テスト
+func TestCreateNewItem(t *testing.T) {
+	db, mock, err := getDBMock()
+    if err != nil {
+        t.Fatal(err)
+    }
+	handleDb, err := db.DB()
+	if err != nil {
+        t.Fatal(err)
+    }
+    defer handleDb.Close()
+	db.Logger = db.Logger.LogMode(logger.Info)
+    // db.LogMode(true)
+
+    r := Repository{DB: db}
+
+    id := "2222"
+    name := "BBBB"
+
+    // Mock設定
+    mock.ExpectQuery(regexp.QuoteMeta(
+        `INSERT INTO "users" ("id","name") VALUES ($1,$2)
+         RETURNING "users"."id"`)).
+        WithArgs(id, name).
+        WillReturnRows(
+            sqlmock.NewRows([]string{"id"}).AddRow(id))
+
+    // 実行
+    err = r.Create(id, name)
+    if err != nil {
+        t.Fatal(err)
+    }
+}
+
+/*
 func TestGetTodoList(t *testing.T) {
 	// Note: Start test Server
 	ts := httptest.NewServer(api.Router())
@@ -362,3 +435,4 @@ func caseNameHelper(t *testing.T, name string, client string, url string) string
 	t.Helper()
 	return name + "のテスト :: [" + client + "] " + url
 }
+*/
