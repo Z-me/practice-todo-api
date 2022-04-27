@@ -1,92 +1,150 @@
 package main
 
 import (
-	// "reflect"
-	// "strconv"
+	"bytes"
 
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"gorm.io/driver/postgres"
-	_ "gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-	// "bytes"
-	// "encoding/json"
-	// "net/http"
-	// "net/http/httptest"
+	// "reflect"
+
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
-	// "github.com/Z-me/practice-todo-api/api"
-	// "github.com/Z-me/practice-todo-api/api/handler"
+
+	"github.com/Z-me/practice-todo-api/api"
+	"github.com/Z-me/practice-todo-api/api/handler"
+	"github.com/Z-me/practice-todo-api/api/model"
+	db "github.com/Z-me/practice-todo-api/middleware"
 )
 
-type v2Suite struct {
-	db      *gorm.DB
-	mock    sqlmock.Sqlmock
-	// student Student
+func caseNameHelper(t *testing.T, name string, client string, url string) string {
+	t.Helper()
+	return name + "のテスト[" + client + "]" + url
 }
 
-func getDBMock() (*gorm.DB, sqlmock.Sqlmock, error) {
-	s := &v2Suite{}
-    db, mock, err := sqlmock.New()
-    if err != nil {
-        return nil, nil, err
-    }
+func TestCreateItem(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(api.Router())
+	defer ts.Close()
 
-	dialector := postgres.New(postgres.Config{
-		DSN:                  "sqlmock_db_0",
-		DriverName:           "postgres",
-		Conn:                 db,
-		PreferSimpleProtocol: true,
-	})
-	s.db, err = gorm.Open(dialector, &gorm.Config{})
-    // gdb, err := gorm.Open("postgres", db)
-	// gorm.Open(postgres.Dialector{
-	// 	Config: &mysql.Config{
-	// 		DriverName: "mysql",
-	// 		Conn: db,
-	// 		SkipInitializeWithVersion: true,
-	// 	}
-	// }, &gorm.Config{})
-
-    if err != nil {
-        return nil, nil, err
-    }
-    return s.db, mock, nil
-}
-
-// TestCreateNewItem DBモックした状態での新規作成テスト
-func TestCreateNewItem(t *testing.T) {
-	db, mock, err := getDBMock()
-    if err != nil {
-        t.Fatal(err)
-    }
-	handleDb, err := db.DB()
+	// Note: Start Connect DB
+	err := db.ConnectDB()
 	if err != nil {
-        t.Fatal(err)
-    }
-    defer handleDb.Close()
-	db.Logger = db.Logger.LogMode(logger.Info)
-    // db.LogMode(true)
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer db.DisconnectDB()
 
-    r := Repository{DB: db}
+	// Note: each values
+	nextID := db.GetNextID()
+	cases := []struct{
+		name 		string
+		url			string
+		client		string
+		status 		int
+		isError 	bool
+		payload		string
+		expected	model.Todo
+		need2Delete bool
+	}{
+		{
+			name: 		"正常系: 新規追加",
+			url: 		"/todo",
+			client: 	"POST",
+			status:	 	http.StatusCreated,
+			isError: 	false,
+			payload:	`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
+			expected:	model.Todo{
+				ID: 		nextID,
+				Title:		"Test TODO",
+				Status:		"Done",
+				Details:	"test_todo",
+				Priority:	"P0",
+			},
+			need2Delete: true,
+		},
+		{
+			name: 		"異常系: 新規追加: 404",
+			url: 		"/todo",
+			client: 	"PUT",
+			status:	 	http.StatusNotFound,
+			isError: 	true,
+			payload:	`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
+			expected:	model.Todo{
+				ID: 		nextID,
+				Title:		"Test TODO",
+				Status:		"Done",
+				Details:	"test_todo",
+				Priority:	"P0",
+			},
+			need2Delete: false,
+		},
+		{
+			name: 		"異常系: 新規追加: 400",
+			url: 		"/todo",
+			client: 	"POST",
+			status:	 	http.StatusBadRequest,
+			isError: 	true,
+			payload:	`{"Message": "Bad Request"}`,
+			expected:	model.Todo{},
+			need2Delete: false,
+		},
+	}
 
-    id := "2222"
-    name := "BBBB"
+	for _, c := range cases {
+		c := c
+		t.Run(caseNameHelper(t, c.name, c.client, c.url), func(t *testing.T) {
+			client := &http.Client{}
+			req, err := http.NewRequest(c.client, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
 
-    // Mock設定
-    mock.ExpectQuery(regexp.QuoteMeta(
-        `INSERT INTO "users" ("id","name") VALUES ($1,$2)
-         RETURNING "users"."id"`)).
-        WithArgs(id, name).
-        WillReturnRows(
-            sqlmock.NewRows([]string{"id"}).AddRow(id))
+			res, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+			defer res.Body.Close()
 
-    // 実行
-    err = r.Create(id, name)
-    if err != nil {
-        t.Fatal(err)
-    }
+			if res.StatusCode != c.status {
+				t.Fatalf("[New Item] Expected status code %v, got %v", c.status, res.StatusCode)
+			}
+			var resData handler.Todo
+			json.NewDecoder(res.Body).Decode(&resData)
+
+			// CreatedAtなどは比較したくないので除外
+			if !c.isError {
+				if	c.expected.ID != uint(resData.ID) {
+					t.Fatalf("ID: want %v, resData = %v", c.expected.ID, resData.ID)
+				}
+				if c.expected.Title != resData.Title {
+					t.Fatalf("Title: want %v, resData = %v", c.expected.Title, resData.Title)
+				}
+				if c.expected.Status != resData.Status {
+					t.Fatalf("Status: want %v, resData = %v", c.expected.Status, resData.Status)
+				}
+				if c.expected.Details != resData.Details {
+					t.Fatalf("Details: want %v, resData = %v", c.expected.Details, resData.Details)
+				}
+				if c.expected.Priority != resData.Priority {
+						t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
+				}
+			}
+
+			// 終了処理
+			if c.need2Delete {
+				err = db.ConnectDB()
+				if err != nil {
+					t.Fatalf("Expected no error, got %v", err)
+				}
+				defer db.DisconnectDB()
+
+				_, err := db.DeleteItem(uint(resData.ID))
+				if err != nil {
+					t.Fatalf("Expected no error, got %v", err)
+				}
+			}
+		})
+	}
 }
-
 /*
 func TestGetTodoList(t *testing.T) {
 	// Note: Start test Server
