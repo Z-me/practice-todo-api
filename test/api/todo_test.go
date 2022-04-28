@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
+	"time"
 
 	// "reflect"
 
@@ -39,7 +41,7 @@ func TestCreateItem(t *testing.T) {
 	cases := []struct{
 		name 		string
 		url			string
-		client		string
+		method		string
 		status 		int
 		isError 	bool
 		payload		string
@@ -49,7 +51,7 @@ func TestCreateItem(t *testing.T) {
 		{
 			name: 		"正常系: 新規追加",
 			url: 		"/todo",
-			client: 	"POST",
+			method: 	"POST",
 			status:	 	http.StatusCreated,
 			isError: 	false,
 			payload:	`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
@@ -65,7 +67,7 @@ func TestCreateItem(t *testing.T) {
 		{
 			name: 		"異常系: 新規追加: 404",
 			url: 		"/todo",
-			client: 	"PUT",
+			method: 	"PUT",
 			status:	 	http.StatusNotFound,
 			isError: 	true,
 			payload:	`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
@@ -75,7 +77,7 @@ func TestCreateItem(t *testing.T) {
 		{
 			name: 		"異常系: 新規追加: 400",
 			url: 		"/todo",
-			client: 	"POST",
+			method: 	"POST",
 			status:	 	http.StatusBadRequest,
 			isError: 	true,
 			payload:	`{"Message": "Bad Request"}`,
@@ -85,15 +87,14 @@ func TestCreateItem(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
-		t.Run(caseNameHelper(t, c.name, c.client, c.url), func(t *testing.T) {
-			client := &http.Client{}
-			req, err := http.NewRequest(c.client, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
+		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
+			method := &http.Client{}
+			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 
-			res, err := client.Do(req)
+			res, err := method.Do(req)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -104,6 +105,7 @@ func TestCreateItem(t *testing.T) {
 			}
 			var resData handler.Todo
 			json.NewDecoder(res.Body).Decode(&resData)
+			fmt.Println("resData", resData)
 
 			// CreatedAtなどは比較したくないので除外
 			if !c.isError {
@@ -120,7 +122,13 @@ func TestCreateItem(t *testing.T) {
 					t.Fatalf("Details: want %v, resData = %v", c.expected.Details, resData.Details)
 				}
 				if c.expected.Priority != resData.Priority {
-						t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
+					t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
+				}
+				if day := time.Date(1, 1, 1, 0, 0, 0, 0, time.Local); resData.CreatedAt == day {
+					t.Fatalf("CreatedAt: DO NOT want %v, resData = %v", day, resData.CreatedAt)
+				}
+				if day := time.Date(1, 1, 1, 0, 0, 0, 0, time.Local); resData.UpdatedAt == day {
+					t.Fatalf("UpdatedAt: DO NOT want %v, resData = %v", day, resData.UpdatedAt)
 				}
 			}
 
@@ -165,11 +173,13 @@ func TestUpdateItem(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	nextID := res.ID
+	createdAt := res.CreatedAt
+	fmt.Println("createdAt: ", createdAt)
 
 	cases := []struct{
 		name 		string
 		url			string
-		client		string
+		method		string
 		status 		int
 		isError 	bool
 		payload		string
@@ -179,7 +189,7 @@ func TestUpdateItem(t *testing.T) {
 		{
 			name: 		"正常系: 更新",
 			url: 		"/todo/" + strconv.Itoa(int(nextID)),
-			client: 	"PUT",
+			method: 	"PUT",
 			status:	 	http.StatusCreated,
 			isError: 	false,
 			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
@@ -195,7 +205,7 @@ func TestUpdateItem(t *testing.T) {
 		{
 			name: 		"異常系: 更新: 404",
 			url: 		"/todo/" + strconv.Itoa(int(nextID)),
-			client: 	"POST",
+			method: 	"POST",
 			status:	 	http.StatusNotFound,
 			isError: 	true,
 			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
@@ -205,7 +215,137 @@ func TestUpdateItem(t *testing.T) {
 		{
 			name: 		"異常系: 新規追加: 400",
 			url: 		"/todo/" + strconv.Itoa(int(nextID)),
-			client: 	"PUT",
+			method: 	"PUT",
+			status:	 	http.StatusBadRequest,
+			isError: 	true,
+			payload:	`{"Message": "Bad Request"}`,
+			expected:	model.Todo{},
+			need2Delete: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
+			method := &http.Client{}
+			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			res, err := method.Do(req)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != c.status {
+				t.Fatalf("[New Item] Expected status code %v, got %v", c.status, res.StatusCode)
+			}
+			var resData handler.Todo
+			json.NewDecoder(res.Body).Decode(&resData)
+			// resultCreatedAt := resData.CreatedAt
+			fmt.Println("resData: ", resData)
+
+			if !c.isError {
+				if	c.expected.ID != uint(resData.ID) {
+					t.Fatalf("ID: want %v, resData = %v", c.expected.ID, resData.ID)
+				}
+				if c.expected.Title != resData.Title {
+					t.Fatalf("Title: want %v, resData = %v", c.expected.Title, resData.Title)
+				}
+				if c.expected.Status != resData.Status {
+					t.Fatalf("Status: want %v, resData = %v", c.expected.Status, resData.Status)
+				}
+				if c.expected.Details != resData.Details {
+					t.Fatalf("Details: want %v, resData = %v", c.expected.Details, resData.Details)
+				}
+				if c.expected.Priority != resData.Priority {
+					t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
+				}
+				if !resData.CreatedAt.Equal(createdAt) {
+					t.Fatalf("CreatedAt: want equal to old data, resData = %v", resData.CreatedAt)
+				}
+				if resData.CreatedAt.After(resData.UpdatedAt) {
+					t.Fatalf("UpdatedAt: DO NOT want equal to %v and %v", resData.CreatedAt, resData.UpdatedAt)
+				}
+			}
+		})
+	}
+	// Note: 事後削除処理
+	err = db.ConnectDB()
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer db.DisconnectDB()
+
+	db.DeleteItem(nextID)
+}
+
+func TestUpdateItemState(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(api.Router())
+	defer ts.Close()
+
+	// Note: Start Connect DB
+	err := db.ConnectDB()
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer db.DisconnectDB()
+
+	// Note: 事前処理
+	target := model.Payload{
+		Title:		"Test TODO",
+		Status:		"Done",
+		Details:	"test_todo",
+		Priority:	"P0",
+	}
+	res, err := db.AddNewTodo(target)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	nextID := res.ID
+
+	cases := []struct{
+		name 		string
+		url			string
+		method		string
+		status 		int
+		isError 	bool
+		payload		string
+		expected	model.Todo
+		need2Delete bool
+	}{
+		{
+			name: 		"正常系: 更新",
+			url: 		"/todo/" + strconv.Itoa(int(nextID)),
+			method: 	"PUT",
+			status:	 	http.StatusCreated,
+			isError: 	false,
+			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
+			expected:	model.Todo{
+				ID: 		nextID,
+				Title:		"Changed TODO",
+				Status:		"Done",
+				Details:	"changed_todo",
+				Priority:	"P0",
+			},
+			need2Delete: true,
+		},
+		{
+			name: 		"異常系: 更新: 404",
+			url: 		"/todo/" + strconv.Itoa(int(nextID)),
+			method: 	"POST",
+			status:	 	http.StatusNotFound,
+			isError: 	true,
+			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
+			expected:	model.Todo{},
+			need2Delete: false,
+		},
+		{
+			name: 		"異常系: 新規追加: 400",
+			url: 		"/todo/" + strconv.Itoa(int(nextID)),
+			method: 	"PUT",
 			status:	 	http.StatusBadRequest,
 			isError: 	true,
 			payload:	`{"Message": "Bad Request"}`,
@@ -216,14 +356,14 @@ func TestUpdateItem(t *testing.T) {
 
 	for _, c := range cases {
 		c := c
-		t.Run(caseNameHelper(t, c.name, c.client, c.url), func(t *testing.T) {
-			client := &http.Client{}
-			req, err := http.NewRequest(c.client, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
+		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
+			method := &http.Client{}
+			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 
-			res, err := client.Do(req)
+			res, err := method.Do(req)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}

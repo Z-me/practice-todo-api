@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Z-me/practice-todo-api/api/model"
 	"gorm.io/driver/postgres"
@@ -108,6 +109,8 @@ func AddNewTodo(payload model.Payload) (model.Todo, error) {
 		Status: payload.Status,
 		Details: payload.Details,
 		Priority: payload.Priority,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 	err := db.Create(&newTodo).Error
 	return newTodo, err
@@ -122,15 +125,21 @@ func UpdateItem(id uint, payload model.Payload) (model.Todo, error) {
 		Status: payload.Status,
 		Details: payload.Details,
 		Priority: payload.Priority,
+		UpdatedAt: time.Now(),
 	}
 
 	target := model.Todo{}
 	if err := db.Find(&target, "id = ?", id).Error; err != nil {
-		return updated, err
+		return model.Todo{}, err
 	}
 
-	err := db.Model(&target).Updates(&updated).Error
-	return updated, err
+	if err := db.Model(&target).Updates(&updated).Error; err != nil {
+		return model.Todo{}, err
+	}
+
+	err := db.First(&target, id).Error
+	return target, err
+	// return updated, err
 }
 
 // UpdateItemStatus はDB上から指定のItemのStatusを更新
@@ -140,7 +149,15 @@ func UpdateItemStatus(id uint, status model.Status) (model.Todo, error) {
 		return model.Todo{}, err
 	}
 
-	err := db.Model(&target).Update("Status", status.Status).Error
+	// err := db.Model(&target).Update("Status", status.Status).Error
+	if err := db.Model(&target).Updates(map[string]interface{}{
+		"Status": status.Status,
+		"UpdatedAt": time.Now(),
+	}).Error; err != nil {
+		return model.Todo{}, err
+	}
+
+	err := db.First(&target, id).Error
 	return target, err
 }
 

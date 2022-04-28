@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -12,11 +13,13 @@ import (
 
 // Todo APIのレスポンスの構造体
 type Todo struct {
-	ID			int     `json:"id"`
-  	Title		string  `json:"title" binding:"required,max=30"`
-  	Status		string  `json:"status" binding:"required"`
-  	Details		string  `json:"details"`
-  	Priority	string  `json:"priority" binding:"required,max=1000"`
+	ID			int     	`json:"id"`
+	Title		string  	`json:"title" binding:"required,max=30"`
+	Status		string  	`json:"status" binding:"required"`
+	Details		string  	`json:"details"`
+	Priority	string  	`json:"priority" binding:"required,max=1000"`
+	CreatedAt	time.Time 	`json:"created_at"`
+	UpdatedAt	time.Time 	`json:"updated_at"`
 }
 
 // Payload APIのDBの新規作成及び更新のPayload
