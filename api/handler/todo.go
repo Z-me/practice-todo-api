@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -92,7 +93,15 @@ func AddNewTodo(c *gin.Context) {
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to create new item"})
 	}
-	c.IndentedJSON(http.StatusCreated, newTodo)
+	c.IndentedJSON(http.StatusCreated, Todo{
+		ID:			int(newTodo.ID),
+		Title:		newTodo.Title,
+		Status:		newTodo.Status,
+		Details:	newTodo.Details,
+		Priority:	newTodo.Priority,
+		CreatedAt:	newTodo.CreatedAt,
+		UpdatedAt:	newTodo.UpdatedAt,
+	})
 }
 
 // UpdateTodoItem ではIDで指定されたItemを更新する
@@ -113,15 +122,24 @@ func UpdateTodoItem(c *gin.Context) {
 	defer db.DisconnectDB()
 
 	updated, err := db.UpdateItem(uint(id), model.Payload{
-		Title: payload.Title,
-		Status: payload.Status,
-		Details: payload.Details,
-		Priority: payload.Priority,
+		Title:		payload.Title,
+		Status:		payload.Status,
+		Details:	payload.Details,
+		Priority:	payload.Priority,
 	})
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}
-	c.IndentedJSON(http.StatusCreated, updated)
+	fmt.Println("updated", updated)
+	c.IndentedJSON(http.StatusOK, Todo{
+		ID:			id,
+		Title:		updated.Title,
+		Status:		updated.Status,
+		Details:	updated.Details,
+		Priority:	updated.Priority,
+		CreatedAt:	updated.CreatedAt,
+		UpdatedAt:	updated.UpdatedAt,
+	})
 }
 
 // UpdateTodoState ではIDを指定したITEMのStatusを更新する
@@ -147,7 +165,7 @@ func UpdateTodoState(c *gin.Context) {
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}
-	c.IndentedJSON(http.StatusCreated, updated)
+	c.IndentedJSON(http.StatusOK, updated)
 }
 
 // DeleteTodoListItem ではIDで指定されたItemを削除する

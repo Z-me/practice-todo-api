@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
+	// "fmt"
 	"strconv"
 	"time"
 
@@ -105,7 +105,6 @@ func TestCreateItem(t *testing.T) {
 			}
 			var resData handler.Todo
 			json.NewDecoder(res.Body).Decode(&resData)
-			fmt.Println("resData", resData)
 
 			// CreatedAtなどは比較したくないので除外
 			if !c.isError {
@@ -174,7 +173,6 @@ func TestUpdateItem(t *testing.T) {
 	}
 	nextID := res.ID
 	createdAt := res.CreatedAt
-	fmt.Println("createdAt: ", createdAt)
 
 	cases := []struct{
 		name 		string
@@ -190,7 +188,7 @@ func TestUpdateItem(t *testing.T) {
 			name: 		"正常系: 更新",
 			url: 		"/todo/" + strconv.Itoa(int(nextID)),
 			method: 	"PUT",
-			status:	 	http.StatusCreated,
+			status:	 	http.StatusOK,
 			isError: 	false,
 			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
 			expected:	model.Todo{
@@ -243,8 +241,6 @@ func TestUpdateItem(t *testing.T) {
 			}
 			var resData handler.Todo
 			json.NewDecoder(res.Body).Decode(&resData)
-			// resultCreatedAt := resData.CreatedAt
-			fmt.Println("resData: ", resData)
 
 			if !c.isError {
 				if	c.expected.ID != uint(resData.ID) {

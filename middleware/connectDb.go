@@ -119,18 +119,19 @@ func AddNewTodo(payload model.Payload) (model.Todo, error) {
 // UpdateItem はDB上から指定のItemの情報を更新
 func UpdateItem(id uint, payload model.Payload) (model.Todo, error) {
 
+	target := model.Todo{}
+	if err := db.Find(&target, "id = ?", id).Error; err != nil {
+		return model.Todo{}, err
+	}
+
 	updated := model.Todo{
 		ID: id,
 		Title: payload.Title,
 		Status: payload.Status,
 		Details: payload.Details,
 		Priority: payload.Priority,
+		CreatedAt:	target.CreatedAt,
 		UpdatedAt: time.Now(),
-	}
-
-	target := model.Todo{}
-	if err := db.Find(&target, "id = ?", id).Error; err != nil {
-		return model.Todo{}, err
 	}
 
 	if err := db.Model(&target).Updates(&updated).Error; err != nil {
@@ -138,8 +139,7 @@ func UpdateItem(id uint, payload model.Payload) (model.Todo, error) {
 	}
 
 	err := db.First(&target, id).Error
-	return target, err
-	// return updated, err
+	return updated, err
 }
 
 // UpdateItemStatus はDB上から指定のItemのStatusを更新
