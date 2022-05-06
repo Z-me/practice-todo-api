@@ -104,7 +104,123 @@ func TestGetTodoList(t *testing.T) {
 	}
 }
 
-func TestGetTodoItem(t *testing.T) {}
+func TestGetTodoItem(t *testing.T) {
+	// Note: Start test Server
+	ts := httptest.NewServer(api.Router())
+	defer ts.Close()
+
+	// Note: Start Connect DB
+	err := db.ConnectDB()
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer db.DisconnectDB()
+
+	// Note: 事前処理
+	target := model.Payload{
+		Title:		"Test TODO",
+		Status:		"Done",
+		Details:	"test_todo",
+		Priority:	"P2",
+	}
+	res, err := db.AddNewTodo(target)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	nextID := res.ID
+	createdAt := res.CreatedAt
+
+	cases := []struct{
+		name 		string
+		url			string
+		method		string
+		status 		int
+		isError 	bool
+		expected	model.Todo
+	}{
+		{
+			name: 		"正常系: Item取得",
+			url: 		"/todo/" + strconv.Itoa(int(nextID)),
+			method: 	"GET",
+			status:	 	http.StatusOK,
+			isError: 	false,
+			expected:	model.Todo{
+				ID: 		nextID,
+				Title:		"Test TODO",
+				Status:		"Done",
+				Details:	"test_todo",
+				Priority:	"P2",
+			},
+		},
+		{
+			name: 		"異常系: Item取得: 404",
+			url: 		"/todo/" + strconv.Itoa(int(nextID)),
+			method: 	"POST",
+			status:	 	http.StatusNotFound,
+			isError: 	true,
+			expected:	model.Todo{},
+		},
+		{
+			name: 		"異常系: Item取得: 400",
+			url: 		"/todo/error",
+			method: 	"GET",
+			status:	 	http.StatusBadRequest,
+			isError: 	true,
+			expected:	model.Todo{},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
+			client := &http.Client{}
+			req, err := http.NewRequest(c.method, ts.URL + c.url, nil)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			res, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != c.status {
+				t.Fatalf("[New Item] Expected status code %v, got %v", c.status, res.StatusCode)
+			}
+			var resData handler.Todo
+			json.NewDecoder(res.Body).Decode(&resData)
+
+			if !c.isError {
+				if	c.expected.ID != uint(resData.ID) {
+					t.Fatalf("ID: want %v, resData = %v", c.expected.ID, resData.ID)
+				}
+				if c.expected.Title != resData.Title {
+					t.Fatalf("Title: want %v, resData = %v", c.expected.Title, resData.Title)
+				}
+				if c.expected.Status != resData.Status {
+					t.Fatalf("Status: want %v, resData = %v", c.expected.Status, resData.Status)
+				}
+				if c.expected.Details != resData.Details {
+					t.Fatalf("Details: want %v, resData = %v", c.expected.Details, resData.Details)
+				}
+				if c.expected.Priority != resData.Priority {
+					t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
+				}
+				if !resData.CreatedAt.Equal(createdAt) {
+					t.Fatalf("CreatedAt: want equal to old data, resData = %v", resData.CreatedAt)
+				}
+			}
+		})
+	}
+	// Note: 事後削除処理
+	err = db.ConnectDB()
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer db.DisconnectDB()
+
+	db.DeleteItem(nextID)
+}
 
 func TestCreateItem(t *testing.T) {
 	// Note: Start test Server

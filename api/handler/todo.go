@@ -81,7 +81,15 @@ func GetTodoItemByID(c *gin.Context) {
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Target item is not found"})
 	}
-	c.IndentedJSON(http.StatusOK, item)
+	c.IndentedJSON(http.StatusOK, Todo{
+		ID:			int(item.ID),
+		Title:		item.Title,
+		Status:		item.Status,
+		Details:	item.Details,
+		Priority:	item.Priority,
+		CreatedAt:	item.CreatedAt,
+		UpdatedAt:	item.UpdatedAt,
+	})
 }
 
 // AddNewTodo では、POSTでItemを追加する
