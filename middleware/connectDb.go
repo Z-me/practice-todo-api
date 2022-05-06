@@ -97,7 +97,7 @@ func GetTodoList() (model.TodoList, error) {
 // GetTodoItemByID はIDをもとにItemを取得する関数
 func GetTodoItemByID(id uint) (model.Todo, error) {
 	todo := model.Todo{}
-	err := db.Find(&todo, "id = ?", id).Error
+	err := db.First(&todo, id).Error
 	return todo, err
 }
 
@@ -120,7 +120,7 @@ func AddNewTodo(payload model.Payload) (model.Todo, error) {
 func UpdateItem(id uint, payload model.Payload) (model.Todo, error) {
 
 	target := model.Todo{}
-	if err := db.Find(&target, "id = ?", id).Error; err != nil {
+	if err := db.First(&target, id).Error; err != nil {
 		return model.Todo{}, err
 	}
 

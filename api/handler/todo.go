@@ -48,10 +48,23 @@ func GetTodoList(c *gin.Context) {
 	defer db.DisconnectDB()
 
 	todoList, err := db.GetTodoList();
-	if err == nil {
+	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
 	}
-	c.IndentedJSON(http.StatusOK, todoList)
+	result := []Todo{}
+	for _, v := range todoList{
+		item := Todo{
+			ID:			int(v.ID),
+			Title:		v.Title,
+			Status:		v.Status,
+			Details:	v.Details,
+			Priority:	v.Priority,
+			CreatedAt:	v.CreatedAt,
+			UpdatedAt:	v.UpdatedAt,
+		}
+		result = append(result, item)
+	}
+	c.IndentedJSON(http.StatusOK, result)
 }
 
 // GetTodoItemByID ではIDから任意のItemを取得する
