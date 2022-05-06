@@ -26,6 +26,27 @@ func caseNameHelper(t *testing.T, name string, client string, url string) string
 	return name + "のテスト[" + client + "]" + url
 }
 
+func compareTodoList(target model.TodoList, expect []handler.Todo) bool {
+	for i, v := range expect {
+		if uint(v.ID) != target[i].ID {
+			return false
+		}
+		if v.Title != target[i].Title {
+			return false
+		}
+		if v.Status != target[i].Status {
+			return false
+		}
+		if v.Details != target[i].Details {
+			return false
+		}
+		if v.Priority != target[i].Priority {
+			return false
+		}
+	}
+	return true
+}
+
 func TestGetTodoList(t *testing.T) {
 	// Note: Start test Server
 	ts := httptest.NewServer(api.Router())
@@ -95,10 +116,9 @@ func TestGetTodoList(t *testing.T) {
 				if len(c.expected) != len(resData) {
 					t.Fatalf("Length: want %v items, resData = %v items", len(c.expected), len(resData))
 				}
-				// Note: DeepEqualだけ通らない辛い
-				// if !reflect.DeepEqual(resData, c.expected) {
-				// 	t.Fatalf("Contents: want %v, resData = %v", c.expected, resData)
-				// }
+				if !compareTodoList(c.expected, resData) {
+					t.Fatalf("Contents: want %v, resData = %v", c.expected, resData)
+				}
 			}
 		})
 	}
