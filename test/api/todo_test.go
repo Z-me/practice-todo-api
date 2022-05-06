@@ -37,6 +37,7 @@ func TestCreateItem(t *testing.T) {
 	defer db.DisconnectDB()
 
 	// Note: each values
+	now := time.Now()
 	nextID := db.GetNextID()
 	cases := []struct{
 		name 		string
@@ -88,13 +89,13 @@ func TestCreateItem(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
-			method := &http.Client{}
+			client := &http.Client{}
 			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 
-			res, err := method.Do(req)
+			res, err := client.Do(req)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -123,11 +124,11 @@ func TestCreateItem(t *testing.T) {
 				if c.expected.Priority != resData.Priority {
 					t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
 				}
-				if day := time.Date(1, 1, 1, 0, 0, 0, 0, time.Local); resData.CreatedAt == day {
-					t.Fatalf("CreatedAt: DO NOT want %v, resData = %v", day, resData.CreatedAt)
+				if !resData.CreatedAt.After(now) {
+					t.Fatalf("CreatedAt: DO NOT want %v, resData = %v", now, resData.CreatedAt)
 				}
-				if day := time.Date(1, 1, 1, 0, 0, 0, 0, time.Local); resData.UpdatedAt == day {
-					t.Fatalf("UpdatedAt: DO NOT want %v, resData = %v", day, resData.UpdatedAt)
+				if !resData.UpdatedAt.After(now) {
+					t.Fatalf("UpdatedAt: DO NOT want %v, resData = %v", now, resData.UpdatedAt)
 				}
 			}
 
@@ -224,13 +225,13 @@ func TestUpdateItem(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
-			method := &http.Client{}
+			client := &http.Client{}
 			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 
-			res, err := method.Do(req)
+			res, err := client.Do(req)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -261,7 +262,7 @@ func TestUpdateItem(t *testing.T) {
 				if !resData.CreatedAt.Equal(createdAt) {
 					t.Fatalf("CreatedAt: want equal to old data, resData = %v", resData.CreatedAt)
 				}
-				if resData.CreatedAt.After(resData.UpdatedAt) {
+				if !resData.UpdatedAt.After(resData.CreatedAt) {
 					t.Fatalf("UpdatedAt: DO NOT want equal to %v and %v", resData.CreatedAt, resData.UpdatedAt)
 				}
 			}
@@ -301,6 +302,7 @@ func TestUpdateItemState(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	nextID := res.ID
+	createdAt := res.CreatedAt
 
 	cases := []struct{
 		name 		string
@@ -316,7 +318,7 @@ func TestUpdateItemState(t *testing.T) {
 			name: 		"正常系: 更新",
 			url: 		"/todo/" + strconv.Itoa(int(nextID)),
 			method: 	"PUT",
-			status:	 	http.StatusCreated,
+			status:	 	http.StatusOK,
 			isError: 	false,
 			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
 			expected:	model.Todo{
@@ -353,13 +355,13 @@ func TestUpdateItemState(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(caseNameHelper(t, c.name, c.method, c.url), func(t *testing.T) {
-			method := &http.Client{}
+			client := &http.Client{}
 			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 
-			res, err := method.Do(req)
+			res, err := client.Do(req)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -387,6 +389,12 @@ func TestUpdateItemState(t *testing.T) {
 				}
 				if c.expected.Priority != resData.Priority {
 					t.Fatalf("Priority: want %v, resData = %v", c.expected.Priority, resData.Priority)
+				}
+				if !resData.CreatedAt.Equal(createdAt) {
+					t.Fatalf("CreatedAt: want equal to old data, resData = %v", resData.CreatedAt)
+				}
+				if !resData.UpdatedAt.After(resData.CreatedAt) {
+					t.Fatalf("UpdatedAt: DO NOT want equal to %v and %v", resData.CreatedAt, resData.UpdatedAt)
 				}
 			}
 		})
