@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
+	// db.ConnectDb()
 	api.Test()
 	api.Router().Run("localhost:8080")
-	// todoApi.Router().Run()
 }

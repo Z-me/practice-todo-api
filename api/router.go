@@ -8,16 +8,17 @@ import (
 	"github.com/Z-me/practice-todo-api/api/handler"
 )
 
+// Test test用
 func Test() {
 	fmt.Println("Open Todo API")
 }
 
+// Router main router
 func Router() *gin.Engine {
 	router := gin.Default()
 
-	handler.LoadInitialData()
 	router.GET("/todo", handler.GetTodoList)
-	router.GET("/todo/:id", handler.GetTodoItemById)
+	router.GET("/todo/:id", handler.GetTodoItemByID)
 	router.POST("/todo", handler.AddNewTodo)
 	router.PUT("/todo/:id", handler.UpdateTodoItem)
 	router.PATCH("/todo/:id/status", handler.UpdateTodoState)
