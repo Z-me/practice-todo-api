@@ -3,10 +3,6 @@ package main
 import (
 	"bytes"
 
-	// "fmt"
-
-	// "fmt"
-
 	"strconv"
 	"time"
 
@@ -18,12 +14,12 @@ import (
 	"github.com/Z-me/practice-todo-api/api"
 	"github.com/Z-me/practice-todo-api/api/handler"
 	"github.com/Z-me/practice-todo-api/api/model"
-	db "github.com/Z-me/practice-todo-api/middleware"
+	db "github.com/Z-me/practice-todo-api/lib"
 )
 
-func caseNameHelper(t *testing.T, name string, client string, url string) string {
+func caseNameHelper(t *testing.T, name string, method string, url string) string {
 	t.Helper()
-	return name + "のテスト[" + client + "]" + url
+	return name + "のテスト[" + method + "]" + url
 }
 
 func compareTodoList(target model.TodoList, expect []handler.Todo) bool {

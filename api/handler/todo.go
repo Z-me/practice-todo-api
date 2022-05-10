@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/Z-me/practice-todo-api/api/model"
-	db "github.com/Z-me/practice-todo-api/middleware"
+	db "github.com/Z-me/practice-todo-api/lib"
 )
 
 // Todo APIのレスポンスの構造体
