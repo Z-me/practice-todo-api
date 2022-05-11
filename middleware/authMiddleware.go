@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	db "github.com/Z-me/practice-todo-api/lib/db"
+	"github.com/Z-me/practice-todo-api/lib/db"
 	"github.com/gin-gonic/gin"
 )
 

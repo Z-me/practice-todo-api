@@ -14,8 +14,12 @@ import (
 	"github.com/Z-me/practice-todo-api/api"
 	"github.com/Z-me/practice-todo-api/api/handler"
 	"github.com/Z-me/practice-todo-api/api/model"
-	db "github.com/Z-me/practice-todo-api/lib"
+	"github.com/Z-me/practice-todo-api/lib/db"
 )
+
+func getAuth() string {
+	return "hajime:passwd"
+}
 
 func caseNameHelper(t *testing.T, name string, method string, url string) string {
 	t.Helper()
@@ -56,8 +60,8 @@ func TestGetTodoList(t *testing.T) {
 	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
-	// todoList := model.TodoList{}
 	expected, err := db.GetTodoList()
+	auth := getAuth()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -66,6 +70,7 @@ func TestGetTodoList(t *testing.T) {
 		name		string
 		url			string
 		method		string
+		auth		bool
 		status		int
 		isError		bool
 		expected	model.TodoList
@@ -74,14 +79,25 @@ func TestGetTodoList(t *testing.T) {
 			name:		"正常系: TodoList取得",
 			url:		"/todo",
 			method:		"GET",
+			auth:		true,
 			status:		http.StatusOK,
 			isError:	false,
 			expected:	expected,
 		},
 		{
+			name:		"異常系: TodoList取得: 401",
+			url:		"/todo",
+			method:		"GET",
+			auth:		false,
+			status:		http.StatusUnauthorized,
+			isError:	true,
+			expected:	model.TodoList{},
+		},
+		{
 			name:		"異常系: TodoList取得: 404",
 			url:		"/TODOOOO",
 			method:		"GET",
+			auth:		true,
 			status:		http.StatusNotFound,
 			isError:	true,
 			expected:	model.TodoList{},
@@ -94,6 +110,9 @@ func TestGetTodoList(t *testing.T) {
 			req, err := http.NewRequest(c.method, ts.URL + c.url, nil)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
+			}
+			if c.auth {
+				req.Header.Set("auth", auth)
 			}
 
 			res, err := client.Do(req)
@@ -139,6 +158,7 @@ func TestGetTodoItem(t *testing.T) {
 		Details:	"test_todo",
 		Priority:	"P2",
 	}
+	auth := getAuth()
 	res, err := db.AddNewTodo(target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -150,6 +170,7 @@ func TestGetTodoItem(t *testing.T) {
 		name		string
 		url			string
 		method		string
+		auth		bool
 		status		int
 		isError		bool
 		expected	model.Todo
@@ -158,6 +179,7 @@ func TestGetTodoItem(t *testing.T) {
 			name:		"正常系: Item取得",
 			url:		"/todo/" + strconv.Itoa(int(nextID)),
 			method:		"GET",
+			auth:		true,
 			status:		http.StatusOK,
 			isError:	false,
 			expected:	model.Todo{
@@ -169,18 +191,29 @@ func TestGetTodoItem(t *testing.T) {
 			},
 		},
 		{
-			name:		"異常系: Item取得: 404",
-			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"POST",
-			status:		http.StatusNotFound,
+			name:		"異常系: Item取得: 400",
+			url:		"/todo/error",
+			method:		"GET",
+			auth:		true,
+			status:		http.StatusBadRequest,
 			isError:	true,
 			expected:	model.Todo{},
 		},
 		{
-			name:		"異常系: Item取得: 400",
-			url:		"/todo/error",
+			name:		"異常系: Item取得: 401",
+			url:		"/todo/" + strconv.Itoa(int(nextID)),
 			method:		"GET",
-			status:		http.StatusBadRequest,
+			auth:		false,
+			status:		http.StatusUnauthorized,
+			isError:	true,
+			expected:	model.Todo{},
+		},
+		{
+			name:		"異常系: Item取得: 404",
+			url:		"/todo/" + strconv.Itoa(int(nextID)),
+			method:		"POST",
+			auth:		true,
+			status:		http.StatusNotFound,
 			isError:	true,
 			expected:	model.Todo{},
 		},
@@ -192,6 +225,9 @@ func TestGetTodoItem(t *testing.T) {
 			req, err := http.NewRequest(c.method, ts.URL + c.url, nil)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
+			}
+			if c.auth {
+				req.Header.Set("auth", auth)
 			}
 
 			res, err := client.Do(req)
@@ -252,11 +288,13 @@ func TestCreateItem(t *testing.T) {
 
 	// Note: each values
 	now := time.Now()
+	auth := getAuth()
 	nextID := db.GetNextID()
 	cases := []struct{
 		name 		string
 		url			string
 		method		string
+		auth 		bool
 		status 		int
 		isError 	bool
 		payload		string
@@ -264,13 +302,14 @@ func TestCreateItem(t *testing.T) {
 		need2Delete bool
 	}{
 		{
-			name:		"正常系: 新規追加",
-			url:		"/todo",
-			method:		"POST",
-			status:		http.StatusCreated,
-			isError:	false,
-			payload:	`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
-			expected:	model.Todo{
+			name:			"正常系: 新規追加",
+			url:			"/todo",
+			method:			"POST",
+			auth: 			true,
+			status:			http.StatusCreated,
+			isError:		false,
+			payload:		`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
+			expected:		model.Todo{
 				ID:			nextID,
 				Title:		"Test TODO",
 				Status:		"Done",
@@ -280,22 +319,35 @@ func TestCreateItem(t *testing.T) {
 			need2Delete:	true,
 		},
 		{
-			name:			"異常系: 新規追加: 404",
+			name:			"異常系: 新規追加: 400",
 			url:			"/todo",
-			method:			"PUT",
-			status:			http.StatusNotFound,
+			method:			"POST",
+			auth: 			true,
+			status:			http.StatusBadRequest,
 			isError:		true,
-			payload:		`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
+			payload:		`{"Message": "Bad Request"}`,
 			expected:		model.Todo{},
 			need2Delete:	false,
 		},
 		{
-			name:			"異常系: 新規追加: 400",
+			name:			"異常系: 新規追加: 401",
 			url:			"/todo",
 			method:			"POST",
-			status:			http.StatusBadRequest,
+			auth: 			false,
+			status:			http.StatusUnauthorized,
 			isError:		true,
-			payload:		`{"Message": "Bad Request"}`,
+			payload:		"",
+			expected:		model.Todo{},
+			need2Delete:	false,
+		},
+		{
+			name:			"異常系: 新規追加: 404",
+			url:			"/todo",
+			method:			"PUT",
+			auth: 			true,
+			status:			http.StatusNotFound,
+			isError:		true,
+			payload:		`{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
 			expected:		model.Todo{},
 			need2Delete:	false,
 		},
@@ -307,6 +359,9 @@ func TestCreateItem(t *testing.T) {
 			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
+			}
+			if c.auth {
+				req.Header.Set("auth", auth)
 			}
 
 			res, err := client.Do(req)
@@ -376,6 +431,7 @@ func TestUpdateItem(t *testing.T) {
 	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
+	auth := getAuth()
 	target := model.Payload{
 		Title:		"Test TODO",
 		Status:		"Done",
@@ -393,19 +449,21 @@ func TestUpdateItem(t *testing.T) {
 		name		string
 		url			string
 		method		string
+		auth		bool
 		status		int
 		isError		bool
 		payload		string
 		expected	model.Todo
 	}{
 		{
-			name:		"正常系: 更新",
-			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"PUT",
-			status:		http.StatusOK,
-			isError:	false,
-			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
-			expected:	model.Todo{
+			name:			"正常系: 更新",
+			url:			"/todo/" + strconv.Itoa(int(nextID)),
+			method:			"PUT",
+			auth:	 		true,
+			status:			http.StatusOK,
+			isError:		false,
+			payload:		`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
+			expected:		model.Todo{
 				ID:			nextID,
 				Title:		"Changed TODO",
 				Status:		"Done",
@@ -414,21 +472,33 @@ func TestUpdateItem(t *testing.T) {
 			},
 		},
 		{
-			name:		"異常系: 更新: 404",
-			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"POST",
-			status:		http.StatusNotFound,
-			isError:	true,
-			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
-			expected:	model.Todo{},
-		},
-		{
 			name:		"異常系: 新規追加: 400",
 			url:		"/todo/" + strconv.Itoa(int(nextID)),
 			method:		"PUT",
+			auth: 		true,
 			status:		http.StatusBadRequest,
 			isError:	true,
 			payload:	`{"Message": "Bad Request"}`,
+			expected:	model.Todo{},
+		},
+		{
+			name:		"正常系: 更新",
+			url:		"/todo/" + strconv.Itoa(int(nextID)),
+			method:		"PUT",
+			auth:	 	false,
+			status:		http.StatusUnauthorized,
+			isError:	true,
+			payload:	"",
+			expected:	model.Todo{},
+		},
+		{
+			name:		"異常系: 更新: 404",
+			url:		"/todo/" + strconv.Itoa(int(nextID)),
+			method:		"POST",
+			auth: 		true,
+			status:		http.StatusNotFound,
+			isError:	true,
+			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
 			expected:	model.Todo{},
 		},
 	}
@@ -439,6 +509,9 @@ func TestUpdateItem(t *testing.T) {
 			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
+			}
+			if c.auth {
+				req.Header.Set("auth", auth)
 			}
 
 			res, err := client.Do(req)
@@ -507,6 +580,7 @@ func TestUpdateItemState(t *testing.T) {
 		Details:	"test_todo",
 		Priority:	"P0",
 	}
+	auth := getAuth()
 	res, err := db.AddNewTodo(target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -518,19 +592,21 @@ func TestUpdateItemState(t *testing.T) {
 		name		string
 		url			string
 		method		string
+		auth		bool
 		status		int
 		isError		bool
 		payload		string
 		expected	model.Todo
 	}{
 		{
-			name:		"正常系: 更新",
-			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"PUT",
-			status:		http.StatusOK,
-			isError:	false,
-			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
-			expected:	model.Todo{
+			name:			"正常系: 更新",
+			url:			"/todo/" + strconv.Itoa(int(nextID)),
+			method:			"PUT",
+			auth: 			true,
+			status:			http.StatusOK,
+			isError:		false,
+			payload:		`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
+			expected:		model.Todo{
 				ID:			nextID,
 				Title:		"Changed TODO",
 				Status:		"Done",
@@ -539,21 +615,33 @@ func TestUpdateItemState(t *testing.T) {
 			},
 		},
 		{
-			name:		"異常系: 更新: 404",
+			name:		"異常系: 更新: 400",
 			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"POST",
-			status:		http.StatusNotFound,
+			method:		"PUT",
+			auth: 		true,
+			status:		http.StatusBadRequest,
+			isError:	true,
+			payload:	`{"Message": "Bad Request"}`,
+			expected:	model.Todo{},
+		},
+		{
+			name:		"正常系: 更新: 401",
+			url:		"/todo/" + strconv.Itoa(int(nextID)),
+			method:		"PUT",
+			auth: 		false,
+			status:		http.StatusUnauthorized,
 			isError:	true,
 			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
 			expected:	model.Todo{},
 		},
 		{
-			name:		"異常系: 新規追加: 400",
+			name:		"異常系: 更新: 404",
 			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"PUT",
-			status:		http.StatusBadRequest,
+			method:		"POST",
+			auth: 		true,
+			status:		http.StatusNotFound,
 			isError:	true,
-			payload:	`{"Message": "Bad Request"}`,
+			payload:	`{"title": "Changed TODO", "status": "Done", "details": "changed_todo", "priority": "P0"}`,
 			expected:	model.Todo{},
 		},
 	}
@@ -565,6 +653,9 @@ func TestUpdateItemState(t *testing.T) {
 			req, err := http.NewRequest(c.method, ts.URL + c.url, bytes.NewBuffer([]byte(c.payload)))
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
+			}
+			if c.auth {
+				req.Header.Set("auth", auth)
 			}
 
 			res, err := client.Do(req)
@@ -634,6 +725,7 @@ func TestDeleteItemState(t *testing.T) {
 		Details:	"test_todo",
 		Priority:	"P0",
 	}
+	auth := getAuth()
 	res, err := db.AddNewTodo(target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -644,17 +736,19 @@ func TestDeleteItemState(t *testing.T) {
 		name		string
 		url			string
 		method		string
+		auth		bool
 		status		int
 		isError		bool
 		expected	model.Todo
 	}{
 		{
-			name:		"正常系: 更新",
-			url:		"/todo/" + strconv.Itoa(int(nextID)),
-			method:		"DELETE",
-			status:		http.StatusOK,
-			isError:	false,
-			expected:	model.Todo{
+			name:			"正常系: 更新",
+			url:			"/todo/" + strconv.Itoa(int(nextID)),
+			method:			"DELETE",
+			auth:			true,
+			status:			http.StatusOK,
+			isError:		false,
+			expected:		model.Todo{
 				ID:			nextID,
 				Title:		"Test TODO",
 				Status:		"Done",
@@ -666,7 +760,17 @@ func TestDeleteItemState(t *testing.T) {
 			name:		"異常系: 更新: 400",
 			url:		"/todo/error",
 			method:		"DELETE",
+			auth:		true,
 			status:		http.StatusBadRequest,
+			isError:	true,
+			expected:	model.Todo{},
+		},
+		{
+			name:		"異常系: 更新: 401",
+			url:		"/todo/" + strconv.Itoa(int(nextID - 1)),
+			method:		"DELETE",
+			auth:		false,
+			status:		http.StatusUnauthorized,
 			isError:	true,
 			expected:	model.Todo{},
 		},
@@ -678,6 +782,9 @@ func TestDeleteItemState(t *testing.T) {
 			req, err := http.NewRequest(c.method, ts.URL + c.url, nil)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
+			}
+			if c.auth {
+				req.Header.Set("auth", auth)
 			}
 
 			res, err := client.Do(req)
