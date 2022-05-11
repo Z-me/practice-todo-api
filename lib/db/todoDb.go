@@ -63,15 +63,15 @@ var dsn string = "host=localhost user=hajime.saito dbname=todo_app port=5432 ssl
 var db *gorm.DB
 var err error
 
-// ConnectDB データベース接続
-func ConnectDB() error {
+// ConnectTodoDB データベース接続
+func ConnectTodoDB() error {
 	fmt.Println("Connect Database")
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	return err
 }
 
-// DisconnectDB データベースの接続解除
-func DisconnectDB() {
+// DisconnectTodoDB データベースの接続解除
+func DisconnectTodoDB() {
 	handleDb, err := db.DB()
 	if err != nil {
 		panic("failed to connect database")

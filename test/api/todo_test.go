@@ -49,11 +49,11 @@ func TestGetTodoList(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectDB()
+	err := db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
 	// todoList := model.TodoList{}
@@ -126,11 +126,11 @@ func TestGetTodoItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectDB()
+	err := db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
 	target := model.Payload{
@@ -229,11 +229,11 @@ func TestGetTodoItem(t *testing.T) {
 		})
 	}
 	// Note: 事後削除処理
-	err = db.ConnectDB()
+	err = db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	db.DeleteItem(nextID)
 }
@@ -244,11 +244,11 @@ func TestCreateItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectDB()
+	err := db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	// Note: each values
 	now := time.Now()
@@ -348,11 +348,11 @@ func TestCreateItem(t *testing.T) {
 
 			// 終了処理
 			if c.need2Delete {
-				err = db.ConnectDB()
+				err = db.ConnectTodoDB()
 				if err != nil {
 					t.Fatalf("Expected no error, got %v", err)
 				}
-				defer db.DisconnectDB()
+				defer db.DisconnectTodoDB()
 
 				_, err := db.DeleteItem(uint(resData.ID))
 				if err != nil {
@@ -369,11 +369,11 @@ func TestUpdateItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectDB()
+	err := db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
 	target := model.Payload{
@@ -479,11 +479,11 @@ func TestUpdateItem(t *testing.T) {
 		})
 	}
 	// Note: 事後削除処理
-	err = db.ConnectDB()
+	err = db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	db.DeleteItem(nextID)
 }
@@ -494,11 +494,11 @@ func TestUpdateItemState(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectDB()
+	err := db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
 	target := model.Payload{
@@ -606,11 +606,11 @@ func TestUpdateItemState(t *testing.T) {
 		})
 	}
 	// Note: 事後削除処理
-	err = db.ConnectDB()
+	err = db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	db.DeleteItem(nextID)
 }
@@ -621,11 +621,11 @@ func TestDeleteItemState(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectDB()
+	err := db.ConnectTodoDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	// Note: 事前処理
 	target := model.Payload{

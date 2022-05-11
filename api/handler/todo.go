@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/Z-me/practice-todo-api/api/model"
-	db "github.com/Z-me/practice-todo-api/lib"
+	db "github.com/Z-me/practice-todo-api/lib/db"
 )
 
 // Todo APIのレスポンスの構造体
@@ -37,7 +37,7 @@ type StatusPayload struct {
 }
 
 func connectDB(c *gin.Context){
-	if err := db.ConnectDB(); err != nil {
+	if err := db.ConnectTodoDB(); err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
 	}
 }
@@ -45,7 +45,7 @@ func connectDB(c *gin.Context){
 // GetTodoList はGETでTODOリストを取得する
 func GetTodoList(c *gin.Context) {
 	connectDB(c)
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	todoList, err := db.GetTodoList();
 	if err != nil {
@@ -75,7 +75,7 @@ func GetTodoItemByID(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	item, err := db.GetTodoItemByID(uint(id))
 	if err != nil {
@@ -102,7 +102,7 @@ func AddNewTodo(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	newTodo, err := db.AddNewTodo(
 		model.Payload{
@@ -140,7 +140,7 @@ func UpdateTodoItem(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	updated, err := db.UpdateItem(uint(id), model.Payload{
 		Title:		payload.Title,
@@ -178,7 +178,7 @@ func UpdateTodoState(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	updated, err := db.UpdateItemStatus(uint(id), model.Status{
 		Status: payload.Status,
@@ -198,7 +198,7 @@ func DeleteTodoListItem(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectDB()
+	defer db.DisconnectTodoDB()
 
 	deleted, err := db.DeleteItem(uint(id))
 	if err != nil {
