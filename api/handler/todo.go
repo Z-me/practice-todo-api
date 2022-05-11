@@ -14,29 +14,29 @@ import (
 
 // Todo APIのレスポンスの構造体
 type Todo struct {
-	ID			int     	`json:"id"`
-	Title		string  	`json:"title" binding:"required,max=30"`
-	Status		string  	`json:"status" binding:"required"`
-	Details		string  	`json:"details"`
-	Priority	string  	`json:"priority" binding:"required,max=1000"`
-	CreatedAt	time.Time 	`json:"created_at"`
-	UpdatedAt	time.Time 	`json:"updated_at"`
+	ID        int       `json:"id"`
+	Title     string    `json:"title" binding:"required,max=30"`
+	Status    string    `json:"status" binding:"required"`
+	Details   string    `json:"details"`
+	Priority  string    `json:"priority" binding:"required,max=1000"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // Payload APIのDBの新規作成及び更新のPayload
 type Payload struct {
-  	Title     	string  `json:"title" binding:"required,max=30"`
-  	Status    	string  `json:"status" binding:"required"`
-  	Details   	string  `json:"details"`
-  	Priority  	string  `json:"priority" binding:"required,max=1000"`
+	Title    string `json:"title" binding:"required,max=30"`
+	Status   string `json:"status" binding:"required"`
+	Details  string `json:"details"`
+	Priority string `json:"priority" binding:"required,max=1000"`
 }
 
 // StatusPayload APIのStatusのみ更新する際のPayload
 type StatusPayload struct {
-  	Status		string `json:"status" binding:"required"`
+	Status string `json:"status" binding:"required"`
 }
 
-func connectDB(c *gin.Context){
+func connectDB(c *gin.Context) {
 	if err := db.ConnectTodoDB(); err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
 	}
@@ -47,20 +47,20 @@ func GetTodoList(c *gin.Context) {
 	connectDB(c)
 	defer db.DisconnectTodoDB()
 
-	todoList, err := db.GetTodoList();
+	todoList, err := db.GetTodoList()
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
 	}
 	result := []Todo{}
-	for _, v := range todoList{
+	for _, v := range todoList {
 		item := Todo{
-			ID:			int(v.ID),
-			Title:		v.Title,
-			Status:		v.Status,
-			Details:	v.Details,
-			Priority:	v.Priority,
-			CreatedAt:	v.CreatedAt,
-			UpdatedAt:	v.UpdatedAt,
+			ID:        int(v.ID),
+			Title:     v.Title,
+			Status:    v.Status,
+			Details:   v.Details,
+			Priority:  v.Priority,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
 		}
 		result = append(result, item)
 	}
@@ -82,13 +82,13 @@ func GetTodoItemByID(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Target item is not found"})
 	}
 	c.IndentedJSON(http.StatusOK, Todo{
-		ID:			int(item.ID),
-		Title:		item.Title,
-		Status:		item.Status,
-		Details:	item.Details,
-		Priority:	item.Priority,
-		CreatedAt:	item.CreatedAt,
-		UpdatedAt:	item.UpdatedAt,
+		ID:        int(item.ID),
+		Title:     item.Title,
+		Status:    item.Status,
+		Details:   item.Details,
+		Priority:  item.Priority,
+		CreatedAt: item.CreatedAt,
+		UpdatedAt: item.UpdatedAt,
 	})
 }
 
@@ -106,22 +106,22 @@ func AddNewTodo(c *gin.Context) {
 
 	newTodo, err := db.AddNewTodo(
 		model.Payload{
-			Title: payload.Title,
-			Status: payload.Status,
-			Details: payload.Details,
+			Title:    payload.Title,
+			Status:   payload.Status,
+			Details:  payload.Details,
 			Priority: payload.Priority,
 		})
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to create new item"})
 	}
 	c.IndentedJSON(http.StatusCreated, Todo{
-		ID:			int(newTodo.ID),
-		Title:		newTodo.Title,
-		Status:		newTodo.Status,
-		Details:	newTodo.Details,
-		Priority:	newTodo.Priority,
-		CreatedAt:	newTodo.CreatedAt,
-		UpdatedAt:	newTodo.UpdatedAt,
+		ID:        int(newTodo.ID),
+		Title:     newTodo.Title,
+		Status:    newTodo.Status,
+		Details:   newTodo.Details,
+		Priority:  newTodo.Priority,
+		CreatedAt: newTodo.CreatedAt,
+		UpdatedAt: newTodo.UpdatedAt,
 	})
 }
 
@@ -143,23 +143,23 @@ func UpdateTodoItem(c *gin.Context) {
 	defer db.DisconnectTodoDB()
 
 	updated, err := db.UpdateItem(uint(id), model.Payload{
-		Title:		payload.Title,
-		Status:		payload.Status,
-		Details:	payload.Details,
-		Priority:	payload.Priority,
+		Title:    payload.Title,
+		Status:   payload.Status,
+		Details:  payload.Details,
+		Priority: payload.Priority,
 	})
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}
 	fmt.Println("updated", updated)
 	c.IndentedJSON(http.StatusOK, Todo{
-		ID:			id,
-		Title:		updated.Title,
-		Status:		updated.Status,
-		Details:	updated.Details,
-		Priority:	updated.Priority,
-		CreatedAt:	updated.CreatedAt,
-		UpdatedAt:	updated.UpdatedAt,
+		ID:        id,
+		Title:     updated.Title,
+		Status:    updated.Status,
+		Details:   updated.Details,
+		Priority:  updated.Priority,
+		CreatedAt: updated.CreatedAt,
+		UpdatedAt: updated.UpdatedAt,
 	})
 }
 

@@ -104,11 +104,11 @@ func GetTodoItemByID(id uint) (model.Todo, error) {
 // AddNewTodo はDBに指定のPayloadの値を投入
 func AddNewTodo(payload model.Payload) (model.Todo, error) {
 	newTodo := model.Todo{
-		ID: GetNextID(),
-		Title: payload.Title,
-		Status: payload.Status,
-		Details: payload.Details,
-		Priority: payload.Priority,
+		ID:        GetNextID(),
+		Title:     payload.Title,
+		Status:    payload.Status,
+		Details:   payload.Details,
+		Priority:  payload.Priority,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -125,12 +125,12 @@ func UpdateItem(id uint, payload model.Payload) (model.Todo, error) {
 	}
 
 	updated := model.Todo{
-		ID: id,
-		Title: payload.Title,
-		Status: payload.Status,
-		Details: payload.Details,
-		Priority: payload.Priority,
-		CreatedAt:	target.CreatedAt,
+		ID:        id,
+		Title:     payload.Title,
+		Status:    payload.Status,
+		Details:   payload.Details,
+		Priority:  payload.Priority,
+		CreatedAt: target.CreatedAt,
 		UpdatedAt: time.Now(),
 	}
 
@@ -151,7 +151,7 @@ func UpdateItemStatus(id uint, status model.Status) (model.Todo, error) {
 
 	// err := db.Model(&target).Update("Status", status.Status).Error
 	if err := db.Model(&target).Updates(map[string]interface{}{
-		"Status": status.Status,
+		"Status":    status.Status,
 		"UpdatedAt": time.Now(),
 	}).Error; err != nil {
 		return model.Todo{}, err
@@ -169,10 +169,10 @@ func DeleteItem(id uint) (model.Todo, error) {
 	}
 
 	result := model.Todo{
-		ID: id,
-		Title: target.Title,
-		Status: target.Status,
-		Details: target.Details,
+		ID:       id,
+		Title:    target.Title,
+		Status:   target.Status,
+		Details:  target.Details,
 		Priority: target.Priority,
 	}
 	err := db.Delete(&target).Error
