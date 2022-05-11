@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,15 +10,16 @@ import (
 
 func LoginCheckMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Println("aaaaaaaaaa")
 		auth := c.Request.Header.Get("auth")
-		// name := c.Request.Header.Get("name")
-		// password := c.Request.Header.Get("password")
+		if auth == "" {
+			c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "401 Unauthorized"})
+			c.Abort()
+			return
+		}
 		splittedAuth := strings.Split(auth, ":")
 		name := splittedAuth[0]
 		password := splittedAuth[1]
-		if name == "" || password == "" || !db.CheckUserAuth(name, password) {
-			// c.Status(http.StatusUnauthorized)
+		if !db.CheckUserAuth(name, password) {
 			c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "401 Unauthorized"})
 			c.Abort()
 		} else {
