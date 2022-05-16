@@ -15,10 +15,11 @@ import (
 	"github.com/Z-me/practice-todo-api/api/handler"
 	"github.com/Z-me/practice-todo-api/api/model"
 	"github.com/Z-me/practice-todo-api/lib/db"
+	"github.com/Z-me/practice-todo-api/lib/util"
 )
 
 func getAuth() string {
-	return "hajime:passwd"
+	return "Basic test:password"
 }
 
 func caseNameHelper(t *testing.T, name string, method string, url string) string {
@@ -53,14 +54,16 @@ func TestGetTodoList(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectTodoDB()
+	util.UseTestBD()
+	err := util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
 	// Note: 事前処理
-	expected, err := db.GetTodoList()
+	dbObj := util.GetDbObj()
+	expected, err := db.GetTodoList(dbObj)
 	auth := getAuth()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -112,7 +115,7 @@ func TestGetTodoList(t *testing.T) {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 			if c.auth {
-				req.Header.Set("auth", auth)
+				req.Header.Set("Authorization", auth)
 			}
 
 			res, err := client.Do(req)
@@ -145,11 +148,12 @@ func TestGetTodoItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectTodoDB()
+	util.UseTestBD()
+	err := util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
 	// Note: 事前処理
 	target := model.Payload{
@@ -159,7 +163,8 @@ func TestGetTodoItem(t *testing.T) {
 		Priority: "P2",
 	}
 	auth := getAuth()
-	res, err := db.AddNewTodo(target)
+	dbObj := util.GetDbObj()
+	res, err := db.AddNewTodo(dbObj, target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -227,7 +232,7 @@ func TestGetTodoItem(t *testing.T) {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 			if c.auth {
-				req.Header.Set("auth", auth)
+				req.Header.Set("Authorization", auth)
 			}
 
 			res, err := client.Do(req)
@@ -265,13 +270,13 @@ func TestGetTodoItem(t *testing.T) {
 		})
 	}
 	// Note: 事後削除処理
-	err = db.ConnectTodoDB()
+	err = util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
-	db.DeleteItem(nextID)
+	db.DeleteItem(dbObj, nextID)
 }
 
 func TestCreateItem(t *testing.T) {
@@ -280,16 +285,18 @@ func TestCreateItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectTodoDB()
+	util.UseTestBD()
+	err := util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
 	// Note: each values
 	now := time.Now()
 	auth := getAuth()
-	nextID := db.GetNextID()
+	dbObj := util.GetDbObj()
+	nextID := db.GetNextID(dbObj)
 	cases := []struct {
 		name        string
 		url         string
@@ -347,7 +354,7 @@ func TestCreateItem(t *testing.T) {
 			auth:        true,
 			status:      http.StatusNotFound,
 			isError:     true,
-			payload:     `{"title": "Test TODO", "status": "Done", "details": "test_todo", "priority": "P0"}`,
+			payload:     "",
 			expected:    model.Todo{},
 			need2Delete: false,
 		},
@@ -361,7 +368,7 @@ func TestCreateItem(t *testing.T) {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 			if c.auth {
-				req.Header.Set("auth", auth)
+				req.Header.Set("Authorization", auth)
 			}
 
 			res, err := client.Do(req)
@@ -378,9 +385,6 @@ func TestCreateItem(t *testing.T) {
 
 			// CreatedAtなどは比較したくないので除外
 			if !c.isError {
-				if c.expected.ID != uint(resData.ID) {
-					t.Fatalf("ID: want %v, resData = %v", c.expected.ID, resData.ID)
-				}
 				if c.expected.Title != resData.Title {
 					t.Fatalf("Title: want %v, resData = %v", c.expected.Title, resData.Title)
 				}
@@ -403,13 +407,13 @@ func TestCreateItem(t *testing.T) {
 
 			// 終了処理
 			if c.need2Delete {
-				err = db.ConnectTodoDB()
+				err = util.ConnectDB()
 				if err != nil {
 					t.Fatalf("Expected no error, got %v", err)
 				}
-				defer db.DisconnectTodoDB()
+				defer util.DisconnectDB()
 
-				_, err := db.DeleteItem(uint(resData.ID))
+				_, err := db.DeleteItem(dbObj, uint(resData.ID))
 				if err != nil {
 					t.Fatalf("Expected no error, got %v", err)
 				}
@@ -424,21 +428,23 @@ func TestUpdateItem(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectTodoDB()
+	util.UseTestBD()
+	err := util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
 	// Note: 事前処理
 	auth := getAuth()
+	dbObj := util.GetDbObj()
 	target := model.Payload{
 		Title:    "Test TODO",
 		Status:   "Done",
 		Details:  "test_todo",
 		Priority: "P0",
 	}
-	res, err := db.AddNewTodo(target)
+	res, err := db.AddNewTodo(dbObj, target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -511,7 +517,7 @@ func TestUpdateItem(t *testing.T) {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 			if c.auth {
-				req.Header.Set("auth", auth)
+				req.Header.Set("Authorization", auth)
 			}
 
 			res, err := client.Do(req)
@@ -552,13 +558,13 @@ func TestUpdateItem(t *testing.T) {
 		})
 	}
 	// Note: 事後削除処理
-	err = db.ConnectTodoDB()
+	err = util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
-	db.DeleteItem(nextID)
+	db.DeleteItem(dbObj, nextID)
 }
 
 func TestUpdateItemState(t *testing.T) {
@@ -567,11 +573,12 @@ func TestUpdateItemState(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectTodoDB()
+	util.UseTestBD()
+	err := util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
 	// Note: 事前処理
 	target := model.Payload{
@@ -580,8 +587,9 @@ func TestUpdateItemState(t *testing.T) {
 		Details:  "test_todo",
 		Priority: "P0",
 	}
+	dbObj := util.GetDbObj()
 	auth := getAuth()
-	res, err := db.AddNewTodo(target)
+	res, err := db.AddNewTodo(dbObj, target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -655,7 +663,7 @@ func TestUpdateItemState(t *testing.T) {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 			if c.auth {
-				req.Header.Set("auth", auth)
+				req.Header.Set("Authorization", auth)
 			}
 
 			res, err := client.Do(req)
@@ -697,13 +705,13 @@ func TestUpdateItemState(t *testing.T) {
 		})
 	}
 	// Note: 事後削除処理
-	err = db.ConnectTodoDB()
+	err = util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
-	db.DeleteItem(nextID)
+	db.DeleteItem(dbObj, nextID)
 }
 
 func TestDeleteItemState(t *testing.T) {
@@ -712,11 +720,12 @@ func TestDeleteItemState(t *testing.T) {
 	defer ts.Close()
 
 	// Note: Start Connect DB
-	err := db.ConnectTodoDB()
+	util.UseTestBD()
+	err := util.ConnectDB()
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
 	// Note: 事前処理
 	target := model.Payload{
@@ -725,8 +734,9 @@ func TestDeleteItemState(t *testing.T) {
 		Details:  "test_todo",
 		Priority: "P0",
 	}
+	dbObj := util.GetDbObj()
 	auth := getAuth()
-	res, err := db.AddNewTodo(target)
+	res, err := db.AddNewTodo(dbObj, target)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -784,7 +794,7 @@ func TestDeleteItemState(t *testing.T) {
 				t.Fatalf("Expected no error, got %v", err)
 			}
 			if c.auth {
-				req.Header.Set("auth", auth)
+				req.Header.Set("Authorization", auth)
 			}
 
 			res, err := client.Do(req)
