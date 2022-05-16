@@ -10,6 +10,7 @@ import (
 
 	"github.com/Z-me/practice-todo-api/api/model"
 	"github.com/Z-me/practice-todo-api/lib/db"
+	"github.com/Z-me/practice-todo-api/lib/util"
 )
 
 // Todo APIのレスポンスの構造体
@@ -37,7 +38,7 @@ type StatusPayload struct {
 }
 
 func connectDB(c *gin.Context) {
-	if err := db.ConnectTodoDB(); err != nil {
+	if err := util.ConnectDB(); err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "failed to connect database"})
 	}
 }
@@ -45,9 +46,10 @@ func connectDB(c *gin.Context) {
 // GetTodoList はGETでTODOリストを取得する
 func GetTodoList(c *gin.Context) {
 	connectDB(c)
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
-	todoList, err := db.GetTodoList()
+	dbObj := util.GetDbObj()
+	todoList, err := db.GetTodoList(dbObj)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Todo List Item not found"})
 	}
@@ -75,9 +77,10 @@ func GetTodoItemByID(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
+	dbObj := util.GetDbObj()
 
-	item, err := db.GetTodoItemByID(uint(id))
+	item, err := db.GetTodoItemByID(dbObj, uint(id))
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Target item is not found"})
 	}
@@ -102,9 +105,11 @@ func AddNewTodo(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
+	dbObj := util.GetDbObj()
 
 	newTodo, err := db.AddNewTodo(
+		dbObj,
 		model.Payload{
 			Title:    payload.Title,
 			Status:   payload.Status,
@@ -113,6 +118,7 @@ func AddNewTodo(c *gin.Context) {
 		})
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to create new item"})
+		return
 	}
 	c.IndentedJSON(http.StatusCreated, Todo{
 		ID:        int(newTodo.ID),
@@ -140,14 +146,19 @@ func UpdateTodoItem(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
 
-	updated, err := db.UpdateItem(uint(id), model.Payload{
-		Title:    payload.Title,
-		Status:   payload.Status,
-		Details:  payload.Details,
-		Priority: payload.Priority,
-	})
+	dbObj := util.GetDbObj()
+
+	updated, err := db.UpdateItem(
+		dbObj,
+		uint(id),
+		model.Payload{
+			Title:    payload.Title,
+			Status:   payload.Status,
+			Details:  payload.Details,
+			Priority: payload.Priority,
+		})
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}
@@ -178,11 +189,15 @@ func UpdateTodoState(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
+	dbObj := util.GetDbObj()
 
-	updated, err := db.UpdateItemStatus(uint(id), model.Status{
-		Status: payload.Status,
-	})
+	updated, err := db.UpdateItemStatus(
+		dbObj,
+		uint(id),
+		model.Status{
+			Status: payload.Status,
+		})
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}
@@ -198,9 +213,10 @@ func DeleteTodoListItem(c *gin.Context) {
 	}
 
 	connectDB(c)
-	defer db.DisconnectTodoDB()
+	defer util.DisconnectDB()
+	dbObj := util.GetDbObj()
 
-	deleted, err := db.DeleteItem(uint(id))
+	deleted, err := db.DeleteItem(dbObj, uint(id))
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "fail to update item"})
 	}

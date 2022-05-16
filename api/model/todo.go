@@ -12,6 +12,15 @@ type Todo struct {
 	UpdatedAt time.Time
 }
 
+type NewTodo struct {
+	Title     string
+	Status    string
+	Details   string
+	Priority  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type TodoList []Todo
 
 type Payload struct {
