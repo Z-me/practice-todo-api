@@ -60,28 +60,25 @@ func UpdateItem(dbObj *gorm.DB, id uint, payload model.Payload) (model.Todo, err
 		return model.Todo{}, err
 	}
 
-	updated := model.Todo{
-		ID:        id,
-		Title:     payload.Title,
-		Status:    payload.Status,
-		Details:   payload.Details,
-		Priority:  payload.Priority,
-		CreatedAt: target.CreatedAt,
-		UpdatedAt: time.Now(),
-	}
+	target.ID = id
+	target.Title = payload.Title
+	target.Status = payload.Status
+	target.Details = payload.Details
+	target.Priority = payload.Priority
+	target.UpdatedAt = time.Now()
 
-	if err := dbObj.Model(&target).Updates(&updated).Error; err != nil {
+	if err := dbObj.Save(&target).Error; err != nil {
 		return model.Todo{}, err
 	}
 
 	err := dbObj.First(&target, id).Error
-	return updated, err
+	return target, err
 }
 
 // UpdateItemStatus はDB上から指定のItemのStatusを更新
 func UpdateItemStatus(dbObj *gorm.DB, id uint, status model.Status) (model.Todo, error) {
 	target := model.Todo{}
-	if err := dbObj.Find(&target, "id = ?", id).Error; err != nil {
+	if err := dbObj.First(&target, id).Error; err != nil {
 		return model.Todo{}, err
 	}
 
@@ -99,7 +96,7 @@ func UpdateItemStatus(dbObj *gorm.DB, id uint, status model.Status) (model.Todo,
 // DeleteItem は任意のItemを削除
 func DeleteItem(dbObj *gorm.DB, id uint) (model.Todo, error) {
 	target := model.Todo{}
-	if err := dbObj.Find(&target, "id = ?", id).Error; err != nil {
+	if err := dbObj.First(&target, id).Error; err != nil {
 		return model.Todo{}, err
 	}
 
