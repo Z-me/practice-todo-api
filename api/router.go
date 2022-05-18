@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/Z-me/practice-todo-api/api/handler"
+	"github.com/Z-me/practice-todo-api/middleware"
 )
 
 // Test test用
@@ -16,6 +17,8 @@ func Test() {
 // Router main router
 func Router() *gin.Engine {
 	router := gin.Default()
+
+	router.Use(middleware.LoginCheckMiddleware())
 
 	router.GET("/todo", handler.GetTodoList)
 	router.GET("/todo/:id", handler.GetTodoItemByID)
